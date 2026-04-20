@@ -1,0 +1,8 @@
+node_modules/
+database.sqlite
+database_backup_corrupt.sqlite
+database_corrupt.sqlite
+database_corrupt_2.sqlite
+uploads/
+.env
+.DS_Store

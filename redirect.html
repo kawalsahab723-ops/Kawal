@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Status | Data Trovix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+            text-align: center;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(244, 63, 94, 0.05) 0%, transparent 50%);
+            z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-card {
+            position: relative;
+            z-index: 1;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            width: 90%;
+            max-width: 600px;
+            border-radius: 28px;
+            padding: 50px 40px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(99, 102, 241, 0.05);
+            animation: cardSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Processing Loader */
+        .processing-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+
+        .processing-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .brand {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .status-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: iconBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
+        }
+
+        @keyframes iconBounce {
+            from { opacity: 0; transform: scale(0.3); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .status-text {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            animation: fadeIn 0.5s ease 1.4s both;
+        }
+
+        .status-sub {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 35px;
+            animation: fadeIn 0.5s ease 1.5s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .complete { color: #22c55e; }
+        .terminate { color: #ef4444; }
+        .quota { color: #f59e0b; }
+        .security { color: #a855f7; }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            animation: fadeIn 0.5s ease 1.6s both;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: left;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .info-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .info-item:hover::after {
+            content: '📋';
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 13px;
+            opacity: 0.5;
+        }
+
+        .info-item.box-copied {
+            background: rgba(34, 197, 94, 0.12) !important;
+            border-color: rgba(34, 197, 94, 0.4) !important;
+        }
+
+        .info-item.box-copied::after {
+            content: '✅' !important;
+            opacity: 1 !important;
+        }
+
+        .info-item.full-width {
+            grid-column: span 2;
+        }
+
+        .info-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.35);
+            margin-bottom: 6px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            word-break: break-all;
+        }
+
+        .save-status {
+            margin-top: 25px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.25);
+            animation: fadeIn 0.5s ease 2s both;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .save-status.saved {
+            color: #22c55e;
+        }
+
+        .save-status.error {
+            color: #ef4444;
+        }
+
+        .dot-pulse {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .copy-all-btn {
+            margin-top: 18px;
+            width: 100%;
+            padding: 13px 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(20, 184, 166, 0.15));
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease 2.2s both;
+        }
+
+        .copy-all-btn:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(20, 184, 166, 0.28));
+            border-color: rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
+
+        .copy-all-btn.copied {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .copy-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(20, 184, 166, 0.15));
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease 2.2s both;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(20, 184, 166, 0.3));
+            border-color: rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="main-card">
+    <!-- Loader -->
+    <div id="loader" class="processing-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-weight: 700; color: rgba(255,255,255,0.6); font-size: 14px;">Processing Survey Data...</p>
+    </div>
+
+    <div class="brand">DATA TROVIX</div>
+
+    <div id="statusIcon" class="status-icon">🤖</div>
+    <div id="statusText" class="status-text">Loading...</div>
+    <div id="statusSub" class="status-sub">Recording your survey response...</div>
+
+    <div class="info-grid">
+        <div class="info-item" onclick="copyBox(this, 'val-pid')">
+            <div class="info-label">Project ID</div>
+            <div class="info-value" id="val-pid">—</div>
+        </div>
+        <div class="info-item" onclick="copyBox(this, 'val-uid')">
+            <div class="info-label">User ID</div>
+            <div class="info-value" id="val-uid">—</div>
+        </div>
+        <div class="info-item" onclick="copyBox(this, 'val-status')">
+            <div class="info-label">Status</div>
+            <div class="info-value" id="val-status">—</div>
+        </div>
+        <div class="info-item" onclick="copyBox(this, 'val-ip')">
+            <div class="info-label">IP Address</div>
+            <div class="info-value" id="val-ip">Detecting...</div>
+        </div>
+        <div class="info-item full-width" onclick="copyBox(this, 'val-country')">
+            <div class="info-label">Country</div>
+            <div class="info-value" id="val-country">Detecting...</div>
+        </div>
+    </div>
+
+    <div id="saveStatus" class="save-status">
+        <span class="dot-pulse"></span> Syncing data...
+    </div>
+
+    <button class="copy-all-btn" id="copyAllBtn" onclick="copyAll()">
+        📋 Copy All
+    </button>
+</div>
+
+<script>
+    // Use relative URL so it works on any host
+    const API_URL = '/api';
+
+    async function init() {
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get("pid") || "N/A";
+        const uid = params.get("uid") || "Anonymous";
+        const rawStatus = (params.get("status") || params.get("S") || "complete").toLowerCase();
+
+        // Show values immediately
+        document.getElementById("val-pid").innerText = pid;
+        document.getElementById("val-uid").innerText = uid;
+
+        // Map status
+        let status = "complete";
+        let statusLabel = "COMPLETED ✅";
+        let statusIcon = "👍😁";
+        let statusSub = "Your survey was completed successfully.";
+        let statusClass = "complete";
+
+        if (rawStatus.startsWith("t")) {
+            status = "terminate";
+            statusLabel = "TERMINATED ❌";
+            statusIcon = "😭";
+            statusSub = "Your survey was terminated.";
+            statusClass = "terminate";
+        } else if (rawStatus.startsWith("q")) {
+            status = "quota";
+            statusLabel = "QUOTA FULL ⚠️";
+            statusIcon = "🤮";
+            statusSub = "The survey quota for your group is full.";
+            statusClass = "quota";
+        } else if (rawStatus.startsWith("s")) {
+            status = "security";
+            statusLabel = "SECURITY TERMINATE 🚫";
+            statusIcon = "🚧👮";
+            statusSub = "No Entry — Security check flagged this response.";
+            statusClass = "security";
+        }
+
+        document.getElementById("val-status").innerText = statusLabel.replace(/[^\w\s]/g, '').trim();
+
+        // 🌐 IP Detection (client-side for display, server gets its own)
+        let detectedIp = "Unknown";
+        try {
+            const geo = await fetch("https://api.ipify.org?format=json").then(r => r.json());
+            detectedIp = geo.ip || "Unknown";
+            document.getElementById("val-ip").innerText = detectedIp;
+        } catch (e) {
+            document.getElementById("val-ip").innerText = "Unknown";
+        }
+
+        // Country detection
+        try {
+            const geoData = await fetch(`https://ipapi.co/${detectedIp}/json/`).then(r => r.json());
+            document.getElementById("val-country").innerText = geoData.country_name || "Unknown";
+        } catch (e) {
+            document.getElementById("val-country").innerText = "Unknown";
+        }
+
+        // 🚀 Save to backend (server also captures IP securely)
+        const saveStatus = document.getElementById("saveStatus");
+        try {
+            if (pid !== "N/A") {
+                const res = await fetch(`${API_URL}/save`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        status: status,
+                        projectId: pid,
+                        userId: uid,
+                        ip: detectedIp
+                    })
+                });
+
+                if (res.ok) {
+                    saveStatus.innerHTML = "✅ Data saved securely";
+                    saveStatus.classList.add("saved");
+                } else {
+                    saveStatus.innerHTML = "⚠️ Save failed — retry later";
+                    saveStatus.classList.add("error");
+                }
+            } else {
+                saveStatus.innerHTML = "⚠️ No Project ID provided";
+                saveStatus.classList.add("error");
+            }
+        } catch (err) {
+            console.error("Save Error:", err);
+            saveStatus.innerHTML = "⚠️ Network error — data not saved";
+            saveStatus.classList.add("error");
+        }
+
+        // Update UI
+        const loader = document.getElementById("loader");
+        loader.classList.add("hide");
+
+        document.getElementById("statusIcon").innerText = statusIcon;
+        const textEl = document.getElementById("statusText");
+        textEl.innerText = statusLabel;
+        textEl.classList.add(statusClass);
+        document.getElementById("statusSub").innerText = statusSub;
+    }
+
+    // Delay to show processing animation
+    setTimeout(init, 1200);
+
+    function copyBox(el, valId) {
+        const value = document.getElementById(valId).innerText;
+        navigator.clipboard.writeText(value).then(() => {
+            el.classList.add('box-copied');
+            setTimeout(() => el.classList.remove('box-copied'), 2000);
+        }).catch(() => {
+            alert('Copy failed.');
+        });
+    }
+
+    function copyAll() {
+        const pid     = document.getElementById('val-pid').innerText;
+        const uid     = document.getElementById('val-uid').innerText;
+        const status  = document.getElementById('val-status').innerText;
+        const ip      = document.getElementById('val-ip').innerText;
+        const country = document.getElementById('val-country').innerText;
+
+        const text = `${pid}\t${uid}\t${status}\t${ip}\t${country}`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyAllBtn');
+            btn.innerHTML = '✅ Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = '📋 Copy All';
+                btn.classList.remove('copied');
+            }, 2500);
+        }).catch(() => {
+            alert('Copy failed.');
+        });
+    }
+</script>
+
+</body>
+</html>

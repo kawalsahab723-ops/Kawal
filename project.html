@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - Survey Ops manager</title>
+    <script>
+        if (!localStorage.getItem('opsUser')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --teal: #0fb9b1;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --sidebar: #111827;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--primary);
+        }
+
+        .project-header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .project-id {
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .project-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 15px 0;
+            color: #0f172a;
+        }
+
+        .status-pill {
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-live { background: #ecfdf5; color: #059669; }
+        .status-hold { background: #fffbeb; color: #d97706; }
+        .status-pause { background: #fff7ed; color: #ea580c; }
+        .status-closed { background: #fef2f2; color: #dc2626; }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 25px;
+        }
+
+        .link-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .country-tag {
+            font-size: 14px;
+            font-weight: 800;
+            background: #f1f5f9;
+            padding: 6px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-val {
+            display: block;
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .stat-lbl {
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .url-box {
+            font-size: 12px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-teal { background: var(--teal); color: white; }
+        .btn-teal:hover { opacity: 0.9; }
+        .btn-outline { background: white; border: 1px solid #e2e8f0; color: #475569; }
+        .btn-outline:hover { background: #f8fafc; }
+
+        .specs-box {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-top: 30px;
+        }
+
+        .specs-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            border: none;
+            background: none;
+            color: #64748b;
+            padding: 10px 25px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
+        /* Add Link Modal Styles */
+        .modal {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px); z-index: 1000; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background: white; border-radius: 24px; padding: 35px;
+            max-width: 450px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #475569; }
+        .form-group input { 
+            width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px;
+            font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box;
+        }
+        .form-group input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(15, 185, 177, 0.1); }
+        
+        .flag-preview { font-size: 32px; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <a href="index.html?view=projects" class="back-btn">← Back to Projects List</a>
+        </div>
+
+        <div id="projectInfo">
+            <!-- Loading Skeletons or Empty State -->
+            <div style="text-align:center; padding: 50px; color: #94a3b8;">Loading project details...</div>
+        </div>
+
+        <div id="specsContainer"></div>
+
+        <div style="margin-top: 35px; display: flex; gap: 10px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-links" onclick="switchTab('links')" class="tab-btn active">🔗 Survey Links</button>
+                <button id="btn-activities" onclick="switchTab('activities')" class="tab-btn">🔔 Project Activity</button>
+            </div>
+            <button id="addLinkBtn" class="btn btn-teal admin-only" onclick="openAddLinkModal()" style="display: none; padding: 8px 20px; font-size: 12px;">+ Add New Link</button>
+        </div>
+
+        <div id="linksContainer" class="links-grid" style="margin-top: 25px;"></div>
+
+        <div id="projectActivities" class="specs-box" style="margin-top: 25px; display: none;">
+            <div class="specs-title">Project Activity History</div>
+            <div id="activityList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+    </div>
+
+    <!-- Add Link Modal -->
+    <div id="addLinkModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-top: 0; font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                <span>➕</span> Add New Survey Link
+            </h2>
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 25px;">Enter the country name and URL for the new survey link.</p>
+            
+            <form id="addLinkForm">
+                <div class="form-group" style="text-align: center;">
+                    <span id="modalFlagPreview" class="flag-preview">🌐</span>
+                    <label>Country Name</label>
+                    <input type="text" id="newCountryName" required placeholder="e.g. USA, India, UK..." oninput="updateModalFlag(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Survey URL</label>
+                    <input type="url" id="newSurveyUrl" required placeholder="https://survey-link.com/...">
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 30px;">
+                    <button type="button" class="btn btn-outline" onclick="closeAddLinkModal()" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn btn-teal" style="flex: 2;">Save Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const urlParams = new URLSearchParams(window.location.search);
+        const projectId = urlParams.get('id');
+        let currentProject = null;
+
+        // Auth & Role check
+        const currentUser = JSON.parse(localStorage.getItem('opsUser') || '{}');
+        const isAdmin = currentUser.role === 'owner' || currentUser.role === 'teamleader';
+        if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+
+        function openAddLinkModal() {
+            document.getElementById('addLinkModal').style.display = 'flex';
+        }
+
+        function closeAddLinkModal() {
+            document.getElementById('addLinkModal').style.display = 'none';
+            document.getElementById('addLinkForm').reset();
+            document.getElementById('modalFlagPreview').innerHTML = '🌐';
+        }
+
+        const countryToCode = {
+            'india': 'in', 'in': 'in',
+            'usa': 'us', 'us': 'us', 'united states': 'us', 'america': 'us',
+            'uk': 'gb', 'united kingdom': 'gb', 'britain': 'gb', 'england': 'gb',
+            'canada': 'ca', 'ca': 'ca',
+            'australia': 'au', 'au': 'au',
+            'germany': 'de', 'de': 'de',
+            'france': 'fr', 'fr': 'fr',
+            'japan': 'jp', 'jp': 'jp',
+            'china': 'cn', 'cn': 'cn',
+            'brazil': 'br', 'br': 'br',
+            'mexico': 'mx', 'mx': 'mx',
+            'italy': 'it', 'it': 'it',
+            'spain': 'es', 'es': 'es',
+            'russia': 'ru', 'ru': 'ru',
+            'south korea': 'kr', 'korea': 'kr', 'kr': 'kr',
+            'netherlands': 'nl', 'nl': 'nl', 'holland': 'nl',
+            'sweden': 'se', 'se': 'se',
+            'norway': 'no', 'no': 'no',
+            'denmark': 'dk', 'dk': 'dk',
+            'finland': 'fi', 'fi': 'fi',
+            'switzerland': 'ch', 'ch': 'ch',
+            'austria': 'at', 'at': 'at',
+            'belgium': 'be', 'be': 'be',
+            'poland': 'pl', 'pl': 'pl',
+            'portugal': 'pt', 'pt': 'pt',
+            'turkey': 'tr', 'tr': 'tr',
+            'saudi arabia': 'sa', 'sa': 'sa', 'ksa': 'sa',
+            'uae': 'ae', 'dubai': 'ae',
+            'singapore': 'sg', 'sg': 'sg',
+            'malaysia': 'my', 'my': 'my',
+            'indonesia': 'id', 'id': 'id',
+            'thailand': 'th', 'th': 'th',
+            'vietnam': 'vn', 'vn': 'vn',
+            'philippines': 'ph', 'ph': 'ph',
+            'pakistan': 'pk', 'pk': 'pk',
+            'bangladesh': 'bd', 'bd': 'bd',
+            'sri lanka': 'lk', 'lk': 'lk',
+            'new zealand': 'nz', 'nz': 'nz',
+            'south africa': 'za', 'za': 'za',
+            'nigeria': 'ng', 'ng': 'ng',
+            'kenya': 'ke', 'ke': 'ke',
+            'egypt': 'eg', 'eg': 'eg',
+            'ghana': 'gh', 'gh': 'gh',
+            'argentina': 'ar', 'ar': 'ar',
+            'colombia': 'co', 'co': 'co',
+            'chile': 'cl', 'cl': 'cl',
+            'peru': 'pe', 'pe': 'pe',
+            'greece': 'gr', 'gr': 'gr',
+            'czech republic': 'cz', 'czechia': 'cz', 'cz': 'cz',
+            'hungary': 'hu', 'hu': 'hu',
+            'romania': 'ro', 'ro': 'ro',
+            'israel': 'il', 'il': 'il',
+            'ireland': 'ie', 'ie': 'ie',
+            'hong kong': 'hk', 'hk': 'hk',
+            'taiwan': 'tw', 'tw': 'tw',
+        };
+
+        function getFlagHtml(name) {
+            const code = countryToCode[name.toLowerCase().trim()];
+            if (code) {
+                return `<img src="https://flagcdn.com/w40/${code}.png" style="width: 20px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`;
+            }
+            return '🌐';
+        }
+
+        function updateModalFlag(val) {
+            document.getElementById('modalFlagPreview').innerHTML = getFlagHtml(val);
+        }
+
+        document.getElementById('addLinkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const country = document.getElementById('newCountryName').value;
+            const url = document.getElementById('newSurveyUrl').value;
+
+            try {
+                let links = [];
+                try { 
+                    links = typeof currentProject.links === 'string' ? JSON.parse(currentProject.links || '[]') : (currentProject.links || []); 
+                } catch (err) { links = []; }
+
+                links.push({ country, url });
+
+                const res = await fetch(`${API_URL}/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ links })
+                });
+
+                if (res.ok) {
+                    closeAddLinkModal();
+                    loadDetails();
+                } else {
+                    alert("Error saving link");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Network error");
+            }
+        });
+
+        async function toggleLinkStatus(idx) {
+            if (!isAdmin) return;
+            try {
+                let links = typeof currentProject.links === 'string' ? JSON.parse(currentProject.links || '[]') : (currentProject.links || []); 
+                const currentStatus = links[idx].status || 'live';
+                links[idx].status = currentStatus === 'live' ? 'pause' : 'live';
+
+                const res = await fetch(`${API_URL}/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ links })
+                });
+
+                if (res.ok) loadDetails();
+                else alert("Error updating link status");
+            } catch (err) {
+                console.error(err);
+                alert("Network error");
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${tab}`).classList.add('active');
+            
+            if (tab === 'links') {
+                document.getElementById('linksContainer').style.display = 'grid';
+                document.getElementById('projectActivities').style.display = 'none';
+            } else {
+                document.getElementById('linksContainer').style.display = 'none';
+                document.getElementById('projectActivities').style.display = 'block';
+            }
+        }
+
+        async function confirmDeleteActivity(id) {
+            if (confirm("🚨 Delete this activity update?")) {
+                await fetch(`${API_URL}/activities/${id}`, { method: 'DELETE' });
+                loadDetails(); // Reload page data
+            }
+        }
+
+        async function loadDetails() {
+            if (!projectId) {
+                document.getElementById('projectInfo').innerHTML = '<div style="color:red; font-weight:bold;">Error: No Project ID provided.</div>';
+                return;
+            }
+
+            try {
+                const [pRes, iRes] = await Promise.all([
+                    fetch(`${API_URL}/projects`),
+                    fetch(`${API_URL}/interviews?projectId=${projectId}`)
+                ]);
+
+                const projects = await pRes.json();
+                const interviews = await iRes.json();
+                const p = projects.find(x => x.id === projectId);
+                currentProject = p;
+
+                if (!p) {
+                    document.getElementById('projectInfo').innerHTML = '<div style="color:red; font-weight:bold;">Project not found.</div>';
+                    return;
+                }
+
+                // Render Header
+                const statusClass = `status-${p.status || 'live'}`;
+                document.getElementById('projectInfo').innerHTML = `
+                    <div class="project-header">
+                        <span class="project-id">#${p.id}</span>
+                        <h1 class="project-title">${p.name}</h1>
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <span class="status-pill ${statusClass}">${(p.status || 'live').toUpperCase()}</span>
+                            <span style="font-size:14px; color:#64748b;">Target Goal: <strong>${p.goal || 0}</strong></span>
+                            <span style="font-size:14px; color:#64748b;">Total Clicks: <strong style="color:var(--primary)">${p.clicks || 0}</strong></span>
+                        </div>
+                    </div>
+                `;
+
+                // Render Links
+                let links = [];
+                try { 
+                    links = typeof p.links === 'string' ? JSON.parse(p.links || '[]') : (p.links || []); 
+                } catch (e) { 
+                    if (p.link) links = [{ url: p.link, country: 'Default' }];
+                }
+
+                const linksHtml = links.map((l, idx) => {
+                    const url = typeof l === 'string' ? l : l.url;
+                    const country = typeof l === 'string' ? 'Unknown' : l.country;
+
+                    const lInts = interviews.filter(i => i.linkIndex == idx);
+                    const c = lInts.filter(i => i.outcome === 'Complete').length;
+                    const t = lInts.filter(i => i.outcome === 'Terminate').length;
+                    const q = lInts.filter(i => i.outcome === 'QuotaFull').length;
+                    const s = lInts.filter(i => i.outcome === 'Security Terminate').length;
+
+                    const lStatus = typeof l === 'object' ? (l.status || 'live') : 'live';
+                    const isPaused = lStatus === 'pause';
+                    const lIr = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
+
+                    return `
+                        <div class="link-card" style="${isPaused ? 'opacity: 0.8; border-color: #fca5a5; background: #fff1f2;' : ''}">
+                            <div class="link-header">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="country-tag">${getFlagHtml(country)} ${country}</div>
+                                    ${isPaused ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800;">PAUSED</span>' : '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800;">LIVE</span>'}
+                                </div>
+                                <div style="display:flex; gap:8px;">
+                                    ${isAdmin ? `<button class="btn btn-outline" onclick="toggleLinkStatus(${idx})" style="padding: 4px 10px; font-size: 11px;">${isPaused ? '▶️ Live' : '⏸️ Pause'}</button>` : ''}
+                                    ${(!isPaused || isAdmin) ? `
+                                        <button class="btn btn-outline" onclick="copyToClipboard('${url}', this, '${p.id}')">Copy Link</button>
+                                    ` : `
+                                        <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">Link Paused</button>
+                                    `}
+                                </div>
+                            </div>
+                            <div class="stats-row" style="${isPaused ? 'background: #fff5f5;' : ''}">
+                                <div class="stat-item"><span class="stat-val" style="color:#059669">${c}</span><span class="stat-lbl">Comp</span></div>
+                                <div class="stat-item"><span class="stat-val" style="color:#f59e0b">${t}</span><span class="stat-lbl">Term</span></div>
+                                <div class="stat-item"><span class="stat-val" style="color:#dc2626">${q}</span><span class="stat-lbl">QF</span></div>
+                                <div class="stat-item"><span class="stat-val" style="color:#6366f1">${lIr}%</span><span class="stat-lbl">IR</span></div>
+                                <div class="stat-item"><span class="stat-val" style="color:#94a3b8">${s}</span><span class="stat-lbl">STer</span></div>
+                            </div>
+                            <div class="url-box" style="${isPaused ? 'background: #fee2e2;' : ''}">${url}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (p.status === 'hold' || p.status === 'pause') {
+                    document.getElementById('linksContainer').innerHTML = `
+                        <div style="grid-column: 1/-1; padding: 50px 20px; text-align: center; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 16px; color: #92400e; margin-top: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+                            <h2 style="margin: 0; font-weight: 800;">Project is on ${p.status.toUpperCase()}</h2>
+                            <p style="font-size: 15px; opacity: 0.8; margin-top: 10px; max-width: 400px; margin-left: auto; margin-right: auto;">Survey links are currently locked. Please contact the administrator or set the project back to <b>LIVE</b> to access them.</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('linksContainer').innerHTML = linksHtml;
+                }
+
+                // Render Specs
+                document.getElementById('specsContainer').innerHTML = `
+                    <div class="specs-box">
+                        <div class="specs-title">📝 Project Specifications & Instructions</div>
+                        <div style="white-space: pre-line; color: #4b5563; line-height: 1.6; font-size: 14px;">
+                            ${p.details || 'No instructions provided.'}
+                        </div>
+                    </div>
+                `;
+
+                // Render Project Activities
+                const allActivities = await (await fetch(`${API_URL}/activities`)).json();
+                const pActivities = allActivities.filter(a => a.projectId === projectId);
+                
+                if (pActivities.length > 0) {
+                    document.getElementById('activityList').innerHTML = pActivities.map(a => `
+                        <div style="padding: 15px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; border-radius: 8px; position: relative;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center;">
+                                <span style="font-size: 11px; color: #94a3b8; font-weight: 700;">${a.timestamp}</span>
+                                <button onclick="confirmDeleteActivity(${a.id})" class="admin-only" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px; font-size: 14px;" title="Delete Update">🗑️</button>
+                            </div>
+                            <div style="font-size: 13px; color: #334155; line-height: 1.4;">${a.content}</div>
+                            ${a.image ? `
+                                <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+                                    <img src="${a.image}" style="width: 100%; max-height: 300px; object-fit: contain; cursor: pointer; display: block;" onclick="window.open('${a.image}', '_blank')">
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('activityList').innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">No updates posted for this project.</div>';
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function logClickAndOpen(id, url) {
+            await fetch(`${API_URL}/projects/${id}/click`, { method: 'POST' });
+            window.open(url, '_blank');
+        }
+
+        function copyToClipboard(text, btn, projectId) {
+            navigator.clipboard.writeText(text).then(() => {
+                fetch(`${API_URL}/projects/${projectId}/click`, { method: 'POST' });
+                const originalText = btn.innerText;
+                btn.innerText = "COPIED!";
+                btn.style.background = "#dcfce7";
+                btn.style.color = "#166534";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "";
+                    btn.style.color = "";
+                }, 2000);
+            });
+        }
+
+        loadDetails();
+    </script>
+</body>
+</html>
