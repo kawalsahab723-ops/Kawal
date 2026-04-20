@@ -1,10 +1,13 @@
 import express from "express";
-import sqlite3 from "sqlite3";
+import mongoose from "mongoose";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from 'url';
 import multer from "multer";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,395 +28,364 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-const DB_PATH = process.env.DATABASE_URL || './database.sqlite';
-const db = new sqlite3.Database(DB_PATH);
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+/* ======================
+   📦 MONGODB SCHEMAS
+   ====================== */
+
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'employee' },
+    isBlocked: { type: Boolean, default: false },
+    assignedTL: { type: String, default: '' }
 });
+const User = mongoose.model('User', userSchema);
 
-// Initialize Database Tables
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS projects (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        links TEXT,
-        goal INTEGER,
-        details TEXT,
-        status TEXT DEFAULT 'active',
-        clicks INTEGER DEFAULT 0,
-        completes INTEGER DEFAULT 0,
-        terminates INTEGER DEFAULT 0,
-        quotafulls INTEGER DEFAULT 0,
-        securities INTEGER DEFAULT 0,
-        cpi REAL DEFAULT 0,
-        createdAt TEXT
-    )`);
-    db.run("ALTER TABLE projects ADD COLUMN cpi REAL DEFAULT 0", (err) => {});
-    db.run("ALTER TABLE projects ADD COLUMN createdAt TEXT", (err) => {});
-    db.run("ALTER TABLE projects ADD COLUMN completes INTEGER DEFAULT 0", (err) => {});
-    db.run("ALTER TABLE projects ADD COLUMN terminates INTEGER DEFAULT 0", (err) => {});
-    db.run("ALTER TABLE projects ADD COLUMN quotafulls INTEGER DEFAULT 0", (err) => {});
-    db.run("ALTER TABLE projects ADD COLUMN securities INTEGER DEFAULT 0", (err) => {});
+const projectSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },
+    name: String,
+    links: String, // Stored as JSON string to match previous behavior
+    goal: { type: Number, default: 0 },
+    details: { type: String, default: '' },
+    status: { type: String, default: 'active' },
+    clicks: { type: Number, default: 0 },
+    completes: { type: Number, default: 0 },
+    terminates: { type: Number, default: 0 },
+    quotafulls: { type: Number, default: 0 },
+    securities: { type: Number, default: 0 },
+    cpi: { type: Number, default: 0 },
+    createdAt: { type: String, default: () => new Date().toISOString() }
+});
+const Project = mongoose.model('Project', projectSchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS interviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        projectId TEXT,
-        linkIndex INTEGER,
-        respId TEXT,
-        outcome TEXT,
-        loi INTEGER,
-        entryTime TEXT,
-        exitTime TEXT,
-        ip TEXT,
-        timestamp TEXT
-    )`);
-    db.run("ALTER TABLE interviews ADD COLUMN entryTime TEXT", (err) => {});
-    db.run("ALTER TABLE interviews ADD COLUMN exitTime TEXT", (err) => {});
-    db.run("ALTER TABLE interviews ADD COLUMN ip TEXT", (err) => {});
+const interviewSchema = new mongoose.Schema({
+    projectId: String,
+    linkIndex: { type: Number, default: 0 },
+    respId: String,
+    outcome: String,
+    loi: { type: Number, default: 0 },
+    entryTime: { type: String, default: '' },
+    exitTime: { type: String, default: '' },
+    ip: { type: String, default: '' },
+    timestamp: { type: String, default: () => new Date().toLocaleString() }
+});
+const Interview = mongoose.model('Interview', interviewSchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password TEXT,
-        role TEXT,
-        isBlocked INTEGER DEFAULT 0,
-        assignedTL TEXT
-    )`);
-    // Ensure column exists for older databases
-    db.run(`ALTER TABLE users ADD COLUMN isBlocked INTEGER DEFAULT 0`, (err) => {
-        // Silently ignore if column already exists
-    });
+const messageSchema = new mongoose.Schema({
+    sender: String,
+    receiver: { type: String, default: 'global' },
+    content: String,
+    timestamp: { type: String, default: () => new Date().toISOString() }
+});
+const Message = mongoose.model('Message', messageSchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sender TEXT,
-        receiver TEXT DEFAULT 'global',
-        content TEXT,
-        timestamp TEXT
-    )`);
+const dailyStatusSchema = new mongoose.Schema({
+    username: String,
+    role: String,
+    content: String,
+    timestamp: { type: String, default: () => new Date().toISOString() }
+});
+const DailyStatus = mongoose.model('DailyStatus', dailyStatusSchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS daily_status (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        role TEXT,
-        content TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+const activitySchema = new mongoose.Schema({
+    projectId: String,
+    content: String,
+    image: String,
+    timestamp: { type: String, default: () => new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }
+});
+const Activity = mongoose.model('Activity', activitySchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS activities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        projectId TEXT,
-        content TEXT,
-        image TEXT,
-        timestamp TEXT
-    )`);
+const attendanceSchema = new mongoose.Schema({
+    username: String,
+    date: String,
+    status: String
+});
+attendanceSchema.index({ username: 1, date: 1 }, { unique: true });
+const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-    db.run(`CREATE TABLE IF NOT EXISTS attendance (
-        username TEXT,
-        date TEXT,
-        status TEXT,
-        PRIMARY KEY (username, date)
-    )`);
-    
-    db.run("ALTER TABLE messages ADD COLUMN receiver TEXT DEFAULT 'global'", (err) => {});
-    db.run("ALTER TABLE messages ADD COLUMN receiver TEXT DEFAULT 'global'", (err) => {});
-    db.run("ALTER TABLE users ADD COLUMN assignedTL TEXT", (err) => {});
-    db.run(`CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
-    )`, (err) => {
-        if (!err) {
-            // First ensure row exists, then force update to the requested domain
-            const defaultBase = process.env.BASE_URL ? `${process.env.BASE_URL}/redirect.html` : 'http://localhost:5000/redirect.html';
-            db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('base_redirect', ?)", [defaultBase]);
-            if (process.env.BASE_URL) {
-                db.run("UPDATE settings SET value = ? WHERE key = 'base_redirect'", [defaultBase]);
-            }
+const settingSchema = new mongoose.Schema({
+    key: { type: String, unique: true },
+    value: String
+});
+const Setting = mongoose.model('Setting', settingSchema);
+
+/* ======================
+   🔌 DATABASE CONNECTION
+   ====================== */
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+mongoose.connect(MONGODB_URI)
+    .then(async () => {
+        console.log("🚀 Connected to MongoDB Atlas");
+        await seedUsers();
+        await seedSettings();
+    })
+    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+
+async function seedUsers() {
+    const defaultUsers = [
+        { username: "admin", password: "admin123", role: "owner" },
+        { username: "kawal", password: "kawal123", role: "employee" },
+        { username: "Ram", password: "ram123", role: "owner" },
+        { username: "Amit", password: "amit123", role: "teamleader" },
+        { username: "Pratham", password: "pratham123", role: "teamleader" },
+        { username: "Anshul", password: "anshul123", role: "teamleader" },
+        { username: "Naveen", password: "naveen123", role: "employee" },
+        { username: "Piyush", password: "piyush123", role: "employee" }
+    ];
+
+    for (const u of defaultUsers) {
+        const exists = await User.findOne({ username: u.username });
+        if (!exists) {
+            await User.create(u);
+            console.log(`👤 Seeded user: ${u.username}`);
         }
-    });
-});
+    }
+}
+
+async function seedSettings() {
+    const defaultBase = process.env.BASE_URL ? `${process.env.BASE_URL}/redirect.html` : 'http://localhost:5000/redirect.html';
+    const exists = await Setting.findOne({ key: 'base_redirect' });
+    if (!exists) {
+        await Setting.create({ key: 'base_redirect', value: defaultBase });
+    }
+}
 
 /* ======================
    🔐 AUTH ROUTES
-====================== */
+   ====================== */
 
-// Login
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;
-    db.get("SELECT * FROM users WHERE username = ? AND password = ?", [username, password], (err, user) => {
-        if (err || !user) {
-            return res.status(401).json({ message: "Invalid credentials" });
-        }
-        if (user.isBlocked) {
-            return res.status(403).json({ blocked: true, message: "bhadwe tu block hai ghar nikal" });
-        }
+    try {
+        const user = await User.findOne({ username, password });
+        if (!user) return res.status(401).json({ message: "Invalid credentials" });
+        if (user.isBlocked) return res.status(403).json({ blocked: true, message: "bhadwe tu block hai ghar nikal" });
+        
         res.json({
             username: user.username,
             role: user.role,
             fullName: user.username.toUpperCase()
         });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-/* ======================
-   🔐 AUTH ROUTES
-====================== */
-
-// Send all users
-app.get("/api/users", (req, res) => {
-    db.all("SELECT username, role, isBlocked, assignedTL FROM users", [], (err, rows) => {
-        if (err) {
-            // If column is missing, add it and retry once
-            if (err.message.includes("no such column: assignedTL")) {
-                db.run("ALTER TABLE users ADD COLUMN assignedTL TEXT", (alterErr) => {
-                    if (alterErr) return res.status(500).json({ error: alterErr.message });
-                    db.all("SELECT username, role, isBlocked, assignedTL FROM users", [], (err2, rows2) => {
-                        if (err2) return res.status(500).json({ error: err2.message });
-                        res.json(rows2 || []);
-                    });
-                });
-                return;
-            }
-            console.error("GET /api/users Error:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows || []);
-    });
+app.get("/api/users", async (req, res) => {
+    try {
+        const users = await User.find({}, 'username role isBlocked assignedTL');
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post("/api/users", (req, res) => {
+app.post("/api/users", async (req, res) => {
     const { username, password, role, assignedTL } = req.body;
-    const finalRole = role || 'employee';
-    db.run("INSERT INTO users (username, password, role, assignedTL) VALUES (?, ?, ?, ?)", [username, password, finalRole, assignedTL || ''], function(err) {
-        if (err) return res.status(400).json({ error: "Username already exists or error: " + err.message });
-        res.json({ success: true, username, role: finalRole });
-    });
+    try {
+        const newUser = await User.create({ username, password, role: role || 'employee', assignedTL: assignedTL || '' });
+        res.json({ success: true, username: newUser.username, role: newUser.role });
+    } catch (err) {
+        res.status(400).json({ error: "Username already exists or error: " + err.message });
+    }
 });
 
-app.delete("/api/users/:username", (req, res) => {
-    const { username } = req.params;
-    db.run("DELETE FROM users WHERE username = ?", [username], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.delete("/api/users/:username", async (req, res) => {
+    try {
+        await User.deleteOne({ username: req.params.username });
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.put("/api/users/:oldUsername", (req, res) => {
+app.put("/api/users/:oldUsername", async (req, res) => {
     const { oldUsername } = req.params;
     const { newUsername, newPassword, newRole, assignedTL } = req.body;
-    
-    if (oldUsername !== newUsername) {
-        db.get("SELECT username FROM users WHERE username = ?", [newUsername], (err, row) => {
-            if (row) return res.status(400).json({ error: "New username already exists" });
-            updateUser();
-        });
-    } else {
-        updateUser();
-    }
+    try {
+        const updateData = { username: newUsername, role: newRole, assignedTL: assignedTL || '' };
+        if (newPassword) updateData.password = newPassword;
 
-    function updateUser() {
-        if (newPassword) {
-            db.run("UPDATE users SET username = ?, password = ?, role = ?, assignedTL = ? WHERE username = ?", [newUsername, newPassword, newRole, assignedTL || '', oldUsername], finalizeUpdate);
-        } else {
-            db.run("UPDATE users SET username = ?, role = ?, assignedTL = ? WHERE username = ?", [newUsername, newRole, assignedTL || '', oldUsername], finalizeUpdate);
-        }
-    }
-
-    function finalizeUpdate(err) {
-        if (err) return res.status(500).json({ error: err.message });
+        await User.updateOne({ username: oldUsername }, updateData);
         if (oldUsername !== newUsername) {
-            db.run("UPDATE daily_status SET username = ? WHERE username = ?", [newUsername, oldUsername]);
+            await DailyStatus.updateMany({ username: oldUsername }, { username: newUsername });
         }
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.put("/api/users/:username/block", (req, res) => {
-    const { username } = req.params;
-    const { isBlocked } = req.body;
-    db.run("UPDATE users SET isBlocked = ? WHERE username = ?", [isBlocked ? 1 : 0, username], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.put("/api/users/:username/block", async (req, res) => {
+    try {
+        await User.updateOne({ username: req.params.username }, { isBlocked: req.body.isBlocked });
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Settings
-app.get("/api/settings", (req, res) => {
-    db.all("SELECT * FROM settings", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+app.get("/api/settings", async (req, res) => {
+    try {
+        const rows = await Setting.find({});
         const settings = {};
         rows.forEach(r => settings[r.key] = r.value);
         res.json(settings);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post("/api/settings", (req, res) => {
+app.post("/api/settings", async (req, res) => {
     const { key, value } = req.body;
-    db.run("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", [key, value], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 /* ======================
    📊 PROJECT ROUTES
-====================== */
+   ====================== */
 
-app.get("/api/projects", (req, res) => {
-    db.all("SELECT * FROM projects", [], (err, rows) => {
-        res.json(rows || []);
-    });
+app.get("/api/projects", async (req, res) => {
+    try {
+        const projects = await Project.find({});
+        res.json(projects);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post("/api/projects", (req, res) => {
+app.post("/api/projects", async (req, res) => {
     const { id, name, links, goal, details, cpi } = req.body;
-    const linksStr = typeof links === 'string' ? links : JSON.stringify(links || []);
-
-    db.run("INSERT INTO projects (id, name, links, goal, details, cpi, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [id, name, linksStr, goal || 0, details || '', cpi || 0, 'active', new Date().toISOString()], (err) => {
-            if (err) {
-                console.error("DB Error:", err.message);
-                return res.status(400).json({ message: "Error saving project: " + err.message });
-            }
-            res.json({ id, name, status: 'active' });
-        });
+    try {
+        const linksStr = typeof links === 'string' ? links : JSON.stringify(links || []);
+        const project = await Project.create({ id, name, links: linksStr, goal: goal || 0, details: details || '', cpi: cpi || 0 });
+        res.json(project);
+    } catch (err) {
+        res.status(400).json({ message: "Error saving project: " + err.message });
+    }
 });
 
-app.get("/api/activities", (req, res) => {
-    db.all("SELECT * FROM activities ORDER BY id DESC LIMIT 50", [], (err, rows) => {
-        res.json(rows || []);
-    });
+app.get("/api/activities", async (req, res) => {
+    try {
+        const activities = await Activity.find({}).sort({ _id: -1 }).limit(50);
+        res.json(activities);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post("/api/activities", upload.single('image'), (req, res) => {
+app.post("/api/activities", upload.single('image'), async (req, res) => {
     const { projectId, content } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : null;
-    const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-
-    db.run("INSERT INTO activities (projectId, content, image, timestamp) VALUES (?, ?, ?, ?)",
-        [projectId, content, image, timestamp], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, id: this.lastID, image });
-        });
-});
-
-app.delete("/api/activities", (req, res) => {
-    db.run("DELETE FROM activities", [], () => {
-        res.json({ message: "All activities deleted" });
-    });
-});
-
-app.delete("/api/activities/:id", (req, res) => {
-    db.run("DELETE FROM activities WHERE id = ?", [req.params.id], () => {
-        res.json({ message: "Activity deleted" });
-    });
-});
-
-app.put("/api/projects/:id", (req, res) => {
-    const { id } = req.params;
-    const { status, links, name, goal, details, cpi } = req.body;
-    
-    let updates = [];
-    let params = [];
-
-    if (status) { updates.push("status = ?"); params.push(status); }
-    if (name) { updates.push("name = ?"); params.push(name); }
-    if (goal !== undefined) { updates.push("goal = ?"); params.push(goal); }
-    if (details !== undefined) { updates.push("details = ?"); params.push(details); }
-    if (cpi !== undefined) { updates.push("cpi = ?"); params.push(cpi); }
-    if (links) {
-        const linksStr = typeof links === 'string' ? links : JSON.stringify(links);
-        updates.push("links = ?");
-        params.push(linksStr);
+    try {
+        const activity = await Activity.create({ projectId, content, image });
+        res.json({ success: true, id: activity._id, image });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    if (updates.length === 0) return res.json({ success: true, message: "No updates provided" });
-
-    params.push(id);
-    const sql = `UPDATE projects SET ${updates.join(", ")} WHERE id = ?`;
-
-    db.run(sql, params, function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, id });
-    });
 });
 
-app.delete("/api/projects/:id", (req, res) => {
+app.delete("/api/activities", async (req, res) => {
+    await Activity.deleteMany({});
+    res.json({ message: "All activities deleted" });
+});
+
+app.delete("/api/activities/:id", async (req, res) => {
+    await Activity.deleteOne({ _id: req.params.id });
+    res.json({ message: "Activity deleted" });
+});
+
+app.put("/api/projects/:id", async (req, res) => {
     const { id } = req.params;
-    db.serialize(() => {
-        db.run("DELETE FROM projects WHERE id = ?", [id]);
-        db.run("DELETE FROM interviews WHERE projectId = ?", [id]);
-    });
-    res.json({ message: "Project and its data deleted permanently" });
+    const updateData = req.body;
+    if (updateData.links && typeof updateData.links !== 'string') {
+        updateData.links = JSON.stringify(updateData.links);
+    }
+    try {
+        await Project.updateOne({ id }, updateData);
+        res.json({ success: true, id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete("/api/projects/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Project.deleteOne({ id });
+        await Interview.deleteMany({ projectId: id });
+        res.json({ message: "Project and its data deleted permanently" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 /* ======================
    📈 INTERVIEW ROUTES
-====================== */
+   ====================== */
 
-app.get("/api/interviews", (req, res) => {
+app.get("/api/interviews", async (req, res) => {
     const { projectId } = req.query;
-    let sql = "SELECT * FROM interviews";
-    let params = [];
-    if (projectId && projectId !== "All") {
-        sql += " WHERE projectId = ?";
-        params.push(projectId);
+    try {
+        const filter = projectId && projectId !== "All" ? { projectId } : {};
+        const interviews = await Interview.find(filter);
+        res.json(interviews);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    db.all(sql, params, (err, rows) => {
-        res.json(rows || []);
-    });
 });
 
-app.post("/api/interviews", (req, res) => {
-    const { projectId, linkIndex, respId, outcome, loi, timestamp, entryTime, exitTime, ip } = req.body;
-    const finalTimestamp = timestamp || new Date().toLocaleString();
-    db.run("INSERT INTO interviews (projectId, linkIndex, respId, outcome, loi, entryTime, exitTime, ip, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [projectId, linkIndex || 0, respId, outcome, loi || 0, entryTime || '', exitTime || '', ip || '', finalTimestamp], async function (err) {
-            if (err) return res.status(500).json({ error: err.message });
+app.post("/api/interviews", async (req, res) => {
+    const { projectId, outcome } = req.body;
+    try {
+        const interview = await Interview.create(req.body);
+        
+        // Update Project counters
+        const status = (outcome || '').toLowerCase();
+        let column = "";
+        if (status === 'complete') column = "completes";
+        else if (status === 'terminate') column = "terminates";
+        else if (status.includes('quota')) column = "quotafulls";
+        else if (status.includes('security')) column = "securities";
 
-            // 🚀 Update Project counters in real-time
-            const status = (outcome || '').toLowerCase();
-            let column = "";
-            if (status === 'complete') column = "completes";
-            else if (status === 'terminate') column = "terminates";
-            else if (status.includes('quota')) column = "quotafulls";
-            else if (status.includes('security')) column = "securities";
-
-            if (column) {
-                db.run(`UPDATE projects SET ${column} = ${column} + 1 WHERE id = ?`, [projectId]);
-            }
-
-            res.json({ id: this.lastID, ...req.body });
-        });
+        if (column) {
+            await Project.updateOne({ id: projectId }, { $inc: { [column]: 1 } });
+        }
+        res.json(interview);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete("/api/interviews", (req, res) => {
-    db.serialize(() => {
-        db.run("DELETE FROM interviews");
-        db.run("UPDATE projects SET completes = 0, terminates = 0, quotafulls = 0, securities = 0, clicks = 0");
-    });
-    res.json({ message: "All interviews deleted and project stats reset" });
+app.delete("/api/interviews", async (req, res) => {
+    try {
+        await Interview.deleteMany({});
+        await Project.updateMany({}, { completes: 0, terminates: 0, quotafulls: 0, securities: 0, clicks: 0 });
+        res.json({ message: "All interviews deleted and project stats reset" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// 🔐 PRO Redirect Save Endpoint (Server-side IP capture)
-app.post("/api/save", (req, res) => {
+app.post("/api/save", async (req, res) => {
     const { status, projectId, userId, ip: clientIp } = req.body;
+    if (!status || !projectId || !userId) return res.status(400).json({ error: "Missing data" });
 
-    // 🚨 Basic validation
-    if (!status || !projectId || !userId) {
-        return res.status(400).json({ error: "Missing data" });
-    }
-
-    // 🔐 Final IP: Prioritize public IP from client (ipify), fallback to server detection
     const finalIp = clientIp || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
-
-    // Map status to outcome format used by dashboard
     let outcome = 'Complete';
     if (status === 'terminate') outcome = 'Terminate';
     if (status === 'quota') outcome = 'QuotaFull';
@@ -423,47 +395,33 @@ app.post("/api/save", (req, res) => {
     const exitTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
     const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-    // Save into interviews table so dashboard shows everything
-    db.run(
-        "INSERT INTO interviews (projectId, linkIndex, respId, outcome, loi, entryTime, exitTime, ip, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [projectId, 0, userId, outcome, 0, '', exitTime, finalIp, timestamp],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-
-            // 🚀 Update Project counters in real-time
-            let column = "";
-            if (status === 'complete') column = "completes";
-            else if (status === 'terminate') column = "terminates";
-            else if (status === 'quota') column = "quotafulls";
-            else if (status === 'security') column = "securities";
-
-            if (column) {
-                db.run(`UPDATE projects SET ${column} = ${column} + 1 WHERE id = ?`, [projectId]);
-            }
-
-            res.json({ message: "Saved successfully", id: this.lastID, ip: finalIp });
-        }
-    );
-});
-
-app.post("/api/projects/:id/click", (req, res) => {
-    db.run("UPDATE projects SET clicks = clicks + 1 WHERE id = ?", [req.params.id], (err) => {
-        res.json({ success: true });
-    });
-});
-
-// 📊 Statistics & IR Calculation
-app.get("/api/stats", (req, res) => {
-    db.all("SELECT outcome FROM interviews", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const interview = await Interview.create({ projectId, respId: userId, outcome, exitTime, ip: finalIp, timestamp });
         
-        let stats = {
-            complete: 0,
-            terminate: 0,
-            quota: 0,
-            security: 0,
-            ir: 0
-        };
+        let column = "";
+        if (status === 'complete') column = "completes";
+        else if (status === 'terminate') column = "terminates";
+        else if (status === 'quota') column = "quotafulls";
+        else if (status === 'security') column = "securities";
+
+        if (column) {
+            await Project.updateOne({ id: projectId }, { $inc: { [column]: 1 } });
+        }
+        res.json({ message: "Saved successfully", id: interview._id, ip: finalIp });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post("/api/projects/:id/click", async (req, res) => {
+    await Project.updateOne({ id: req.params.id }, { $inc: { clicks: 1 } });
+    res.json({ success: true });
+});
+
+app.get("/api/stats", async (req, res) => {
+    try {
+        const rows = await Interview.find({}, 'outcome');
+        let stats = { complete: 0, terminate: 0, quota: 0, security: 0, ir: 0 };
 
         rows.forEach(r => {
             const status = (r.outcome || '').toLowerCase();
@@ -474,211 +432,71 @@ app.get("/api/stats", (req, res) => {
         });
 
         const totalAttempt = stats.complete + stats.terminate;
-        if (totalAttempt > 0) {
-            stats.ir = ((stats.complete / totalAttempt) * 100).toFixed(2);
-        }
-
+        if (totalAttempt > 0) stats.ir = ((stats.complete / totalAttempt) * 100).toFixed(2);
         res.json(stats);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* ======================
+   📉 DAILY STATUS & OTHERS
+   ====================== */
+
+app.get("/api/daily-status", async (req, res) => {
+    const statuses = await DailyStatus.find({}).sort({ timestamp: -1 });
+    res.json(statuses);
+});
+
+app.get("/api/daily-status/monthly", async (req, res) => {
+    const { month } = req.query; // YYYY-MM
+    const statuses = await DailyStatus.find({ timestamp: { $regex: new RegExp(`^${month}`) } });
+    res.json(statuses);
+});
+
+app.post("/api/daily-status", async (req, res) => {
+    const { username, content, timestamp } = req.body;
+    const status = await DailyStatus.create({ username, content, timestamp: timestamp || new Date().toISOString() });
+    res.json(status);
+});
+
+app.delete("/api/daily-status/:id", async (req, res) => {
+    await DailyStatus.deleteOne({ _id: req.params.id });
+    res.json({ success: true });
+});
+
+app.get("/api/messages", async (req, res) => {
+    const { user1, user2 } = req.query;
+    let filter = { receiver: 'global' };
+    if (user1 && user2) {
+        filter = { $or: [{ sender: user1, receiver: user2 }, { sender: user2, receiver: user1 }] };
+    }
+    const messages = await Message.find(filter).sort({ _id: 1 });
+    res.json(messages);
+});
+
+app.post("/api/messages", async (req, res) => {
+    const { sender, receiver, content } = req.body;
+    const msg = await Message.create({ sender, receiver: receiver || 'global', content });
+    res.json(msg);
+});
+
+app.get("/api/attendance", async (req, res) => {
+    const attendance = await Attendance.find({ date: req.query.date });
+    res.json(attendance);
+});
+
+app.post("/api/attendance", async (req, res) => {
+    const { username, date, status } = req.body;
+    await Attendance.findOneAndUpdate({ username, date }, { status }, { upsert: true });
+    res.json({ success: true });
+});
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
-// Daily Status Routes
-app.get("/api/daily-status", (req, res) => {
-    db.all("SELECT * FROM daily_status ORDER BY timestamp DESC", [], (err, rows) => {
-        res.json(rows || []);
-    });
-});
-
-app.get("/api/daily-status/monthly", (req, res) => {
-    const { month } = req.query; // format: YYYY-MM
-    db.all("SELECT username, timestamp, content FROM daily_status WHERE timestamp LIKE ?", [`${month}%`], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []);
-    });
-});
-
-app.delete("/api/daily-status/monthly", (req, res) => {
-    const { month } = req.query;
-    if (!month) return res.status(400).json({ error: "Month required" });
-    db.run("DELETE FROM daily_status WHERE timestamp LIKE ?", [`${month}%`], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, deleted: this.changes });
-    });
-});
-
-app.post("/api/daily-status", (req, res) => {
-    const { username, content, timestamp } = req.body;
-    const finalTS = timestamp || new Date().toISOString();
-    db.run("INSERT INTO daily_status (username, content, timestamp) VALUES (?, ?, ?)", [username, content, finalTS], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, username, content, timestamp: finalTS });
-    });
-});
-
-app.delete("/api/daily-status/:id", (req, res) => {
-    db.run("DELETE FROM daily_status WHERE id = ?", [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-    });
-});
-
-app.delete("/api/daily-status", (req, res) => {
-    db.run("DELETE FROM daily_status", [], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-    });
-});
-
-app.get("/api/messages", (req, res) => {
-    const { user1, user2 } = req.query;
-    if (user1 && user2) {
-        // Private chat between two users
-        db.all(`
-            SELECT m.*, u.role as senderRole 
-            FROM messages m 
-            LEFT JOIN users u ON m.sender = u.username 
-            WHERE (m.sender = ? AND m.receiver = ?) OR (m.sender = ? AND m.receiver = ?) 
-            ORDER BY m.id ASC`, [user1, user2, user2, user1], (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows || []);
-        });
-    } else {
-        // Global chat (where receiver is 'global')
-        db.all(`
-            SELECT m.*, u.role as senderRole 
-            FROM messages m 
-            LEFT JOIN users u ON m.sender = u.username 
-            WHERE m.receiver = 'global' 
-            ORDER BY m.id ASC`, [], (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows || []);
-        });
-    }
-});
-
-app.get("/api/messages/unread-counts-per-user", (req, res) => {
-    const { username, lastId } = req.query;
-    if (!username) return res.status(400).json({ error: "username missing" });
-    
-    db.all(`
-        SELECT sender, COUNT(*) as count 
-        FROM messages 
-        WHERE receiver = ? AND id > ? AND sender != ?
-        GROUP BY sender
-    `, [username, lastId || 0, username], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        const counts = {};
-        rows.forEach(r => counts[r.sender] = r.count);
-        res.json(counts);
-    });
-});
-
-app.get("/api/messages/unread-count", (req, res) => {
-    const { username, lastId } = req.query;
-    if (!username) return res.status(400).json({ error: "username missing" });
-    db.get("SELECT COUNT(*) as count FROM messages WHERE (receiver = ? OR receiver = 'global') AND id > ? AND sender != ?", [username, lastId || 0, username], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ newCount: row ? row.count : 0 });
-    });
-});
-
-app.post("/api/messages", (req, res) => {
-    const { sender, receiver, content } = req.body;
-    const dest = receiver || 'global';
-    db.run("INSERT INTO messages (sender, receiver, content, timestamp) VALUES (?, ?, ?, ?)", [sender, dest, content, new Date().toISOString()], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, sender, receiver: dest, content, timestamp: new Date().toISOString() });
-    });
-});
-
-app.delete("/api/messages/clear-my", (req, res) => {
-    const { sender, receiver } = req.body;
-    if (!sender || !receiver) return res.status(400).json({ error: "sender and receiver required" });
-    
-    if (receiver === 'global') {
-        db.run("DELETE FROM messages WHERE sender = ? AND receiver = 'global'", [sender], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, deleted: this.changes });
-        });
-    } else {
-        db.run("DELETE FROM messages WHERE sender = ? AND receiver = ?", [sender, receiver], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, deleted: this.changes });
-        });
-    }
-});
-
-app.delete("/api/messages/:id", (req, res) => {
-    const id = req.params.id;
-    db.run("DELETE FROM messages WHERE id = ?", [id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, deleted: this.changes });
-    });
-});
-
-app.delete("/api/messages", (req, res) => {
-    db.run("DELETE FROM messages WHERE receiver = 'global'", [], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, deleted: this.changes });
-    });
-});
-
-app.get("/api/attendance", (req, res) => {
-    const { date } = req.query;
-    db.all("SELECT * FROM attendance WHERE date = ?", [date], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []);
-    });
-});
-
-app.post("/api/attendance", (req, res) => {
-    const { username, date, status } = req.body;
-    db.run("INSERT OR REPLACE INTO attendance (username, date, status) VALUES (?, ?, ?)", [username, date, status], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-    });
-});
-
-app.get("/api/attendance/monthly", (req, res) => {
-    const { month } = req.query; // format: YYYY-MM
-    db.all("SELECT * FROM attendance WHERE date LIKE ?", [`${month}%`], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows || []);
-    });
-});
-
-app.delete("/api/attendance/monthly", (req, res) => {
-    const { month } = req.query; // format: YYYY-MM
-    if (!month) return res.status(400).json({ error: "Month required" });
-    db.run("DELETE FROM attendance WHERE date LIKE ?", [`${month}%`], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, deleted: this.changes });
-    });
-});
-
 app.listen(PORT, () => {
-    db.run("CREATE INDEX IF NOT EXISTS idx_status_ts ON daily_status(timestamp)");
-    db.run("CREATE INDEX IF NOT EXISTS idx_att_date ON attendance(date)");
-
-    // Improved Auto-seed: Check and add missing users one by one
-    const defaultUsers = [
-        { u: "admin", p: "admin123", r: "owner" },
-        { u: "kawal", p: "kawal123", r: "employee" },
-        { u: "Ram", p: "ram123", r: "owner" },
-        { u: "Amit", p: "amit123", r: "teamleader" },
-        { u: "Pratham", p: "pratham123", r: "teamleader" },
-        { u: "Anshul", p: "anshul123", r: "teamleader" },
-        { u: "Naveen", p: "naveen123", r: "employee" },
-        { u: "Piyush", p: "piyush123", r: "employee" }
-    ];
-
-    defaultUsers.forEach(user => {
-        db.get("SELECT username FROM users WHERE username = ?", [user.u], (err, row) => {
-            if (!row) {
-                console.log(`Adding missing user: ${user.u}`);
-                db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [user.u, user.p, user.r]);
-            }
-        });
-    });
+    console.log(`📡 Server running on port ${PORT}`);
 });
