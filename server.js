@@ -133,13 +133,23 @@ const Setting = mongoose.model('Setting', settingSchema);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI)
+if (!MONGODB_URI) {
+    console.error("❌ CRITICAL ERROR: MONGODB_URI is not defined in environment variables!");
+} else {
+    mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+    })
     .then(async () => {
         console.log("🚀 Connected to MongoDB Atlas");
         await seedUsers();
         await seedSettings();
     })
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+    .catch(err => {
+        console.error("❌ MongoDB Connection Error:", err.message);
+        console.log("⚠️ Server will continue to run, but database features may fail.");
+    });
+}
 
 async function seedUsers() {
     const defaultUsers = [
