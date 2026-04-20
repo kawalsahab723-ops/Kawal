@@ -31,8 +31,20 @@ const upload = multer({ storage: storage });
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve static files from the root directory
+app.use(express.static(path.resolve(__dirname)));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+
+// Main Route - Move this up to ensure it catches the root request
+app.get("/", (req, res) => {
+    const indexPath = path.resolve(__dirname, "index.html");
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send("index.html not found in " + __dirname);
+    }
+});
 
 /* ======================
    📦 MONGODB SCHEMAS
@@ -490,10 +502,6 @@ app.post("/api/attendance", async (req, res) => {
     const { username, date, status } = req.body;
     await Attendance.findOneAndUpdate({ username, date }, { status }, { upsert: true });
     res.json({ success: true });
-});
-
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
