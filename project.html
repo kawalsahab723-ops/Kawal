@@ -11,35 +11,171 @@
     </script>
     <style>
         :root {
-            --primary: #2563eb;
-            --teal: #0fb9b1;
-            --success: #22c55e;
-            --error: #ef4444;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --teal: #14b8a6;
+            --teal-dark: #0d9488;
+            --success: #10b981;
+            --error: #f43f5e;
             --warning: #f59e0b;
             --bg: #e0f2fe;
             --card: #ffffff;
-            --sidebar: #111827;
+            --sidebar: #0f172a;
+            --sidebar-active: #1e293b;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
             margin: 0;
             padding: 0;
-            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        .header {
+        /* Layout */
+        .app-container {
             display: flex;
-            justify-content: space-between;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar);
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-header {
+            padding: 28px 25px;
+            display: flex;
             align-items: center;
-            margin-bottom: 30px;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: white;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), var(--teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .profile-section {
+            padding: 0 25px 30px;
+            border-bottom: 1px solid #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--teal));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .profile-info {
+            line-height: 1.2;
+        }
+
+        .profile-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 0 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13.5px;
+            margin-bottom: 3px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #94a3b8;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-style: normal;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-header {
+            height: 64px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: var(--bg);
         }
 
         .back-btn {
@@ -63,7 +199,7 @@
             border-radius: 16px;
             border: 1px solid #cbd5e1;
             margin-bottom: 30px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         }
 
         .project-id {
@@ -190,15 +326,13 @@
         }
 
         .btn-teal { background: var(--teal); color: white; }
-        .btn-teal:hover { opacity: 0.9; }
         .btn-outline { background: white; border: 1px solid #e2e8f0; color: #475569; }
-        .btn-outline:hover { background: #f8fafc; }
 
         .specs-box {
             background: white;
             padding: 25px;
             border-radius: 16px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
             margin-top: 30px;
         }
 
@@ -219,118 +353,105 @@
             font-weight: 700;
             cursor: pointer;
             border-radius: 8px;
-            transition: 0.2s;
             font-size: 14px;
         }
 
         .tab-btn.active {
-            background: var(--primary) !important;
-            color: white !important;
+            background: var(--primary);
+            color: white;
         }
 
-        .tab-btn:hover:not(.active) {
-            background: #f1f5f9;
-        }
-
-        /* Add Link Modal Styles */
-        .modal {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px); z-index: 1000; display: none;
-            align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal-content {
-            background: white; border-radius: 24px; padding: 35px;
-            max-width: 450px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #475569; }
-        .form-group input { 
-            width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px;
-            font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box;
-        }
-        .form-group input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(15, 185, 177, 0.1); }
-        
-        .flag-preview { font-size: 32px; margin-bottom: 10px; display: block; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--teal); }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <div class="header">
-            <a href="index.html?view=projects" class="back-btn">← Back to Projects List</a>
-        </div>
-
-        <div id="projectInfo">
-            <!-- Loading Skeletons or Empty State -->
-            <div style="text-align:center; padding: 50px; color: #94a3b8;">Loading project details...</div>
-        </div>
-
-        <div id="specsContainer"></div>
-
-        <div style="margin-top: 35px; display: flex; gap: 10px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; align-items: center; justify-content: space-between;">
-            <div style="display: flex; gap: 10px;">
-                <button id="btn-links" onclick="switchTab('links')" class="tab-btn active">🔗 Survey Links</button>
-                <button id="btn-activities" onclick="switchTab('activities')" class="tab-btn">🔔 Project Activity</button>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">AD <span>Data Trovix</span></div>
             </div>
-            <button id="addLinkBtn" class="btn btn-teal admin-only" onclick="openAddLinkModal()" style="display: none; padding: 8px 20px; font-size: 12px;">+ Add New Link</button>
-        </div>
 
-        <div id="linksContainer" class="links-grid" style="margin-top: 25px;"></div>
+            <div class="profile-section">
+                <div class="profile-card">
+                    <div class="avatar" id="userInitial">?</div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="userNameDisplay">Loading...</div>
+                        <div class="profile-role" id="userRoleDisplay">...</div>
+                    </div>
+                </div>
+            </div>
 
-        <div id="projectActivities" class="specs-box" style="margin-top: 25px; display: none;">
-            <div class="specs-title">Project Activity History</div>
-            <div id="activityList" style="display: flex; flex-direction: column; gap: 12px;"></div>
-        </div>
-    </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item"><i>📊</i> Dashboard</a>
+                <a href="index.html" class="nav-item"><i>👥</i> Respondents</a>
+                <a href="#" class="nav-item active"><i>📁</i> Projects</a>
+                <a href="index.html" class="nav-item"><i>🔔</i> Activities</a>
+                <a href="index.html" class="nav-item"><i>📅</i> Daily Status</a>
+                <a href="index.html" class="nav-item"><i>💬</i> Messages</a>
+            </nav>
 
-    <!-- Add Link Modal -->
-    <div id="addLinkModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-top: 0; font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px;">
-                <span>➕</span> Add New Survey Link
-            </h2>
-            <p style="font-size: 14px; color: #64748b; margin-bottom: 25px;">Enter the country name and URL for the new survey link.</p>
-            
-            <form id="addLinkForm">
-                <div class="form-group" style="text-align: center;">
-                    <span id="modalFlagPreview" class="flag-preview">🌐</span>
-                    <label>Country Name</label>
-                    <input type="text" id="newCountryName" required placeholder="e.g. USA, India, UK..." oninput="updateModalFlag(this.value)">
+            <div style="padding: 20px;">
+                <button onclick="logout()" class="btn btn-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; color: #9ca3af; border-color: #1f2937;"><i>🚪</i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <a href="index.html" class="back-btn"><i>←</i> Back to Projects List</a>
+                <div id="surveyStatusBadge" class="status-pill status-live" style="font-size: 10px;">PROJECT DETAILS</div>
+            </header>
+
+            <div class="content-body">
+                <div id="projectInfo"></div>
+                
+                <div style="display:flex; gap:10px; margin-top:30px; border-bottom: 2px solid #e2e8f0; padding-bottom:10px;">
+                    <button class="tab-btn active" id="tab-links" onclick="switchTab('links')">🔗 Survey Links</button>
+                    <button class="tab-btn" id="tab-activities" onclick="switchTab('activities')">🔔 Project Activity</button>
                 </div>
-                <div class="form-group">
-                    <label>Survey URL</label>
-                    <input type="url" id="newSurveyUrl" required placeholder="https://survey-link.com/...">
+
+                <div id="linksView">
+                    <div id="linksContainer" class="links-grid" style="margin-top:25px;"></div>
+                    <div id="specsContainer"></div>
                 </div>
-                <div style="display: flex; gap: 12px; margin-top: 30px;">
-                    <button type="button" class="btn btn-outline" onclick="closeAddLinkModal()" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="btn btn-teal" style="flex: 2;">Save Link</button>
+
+                <div id="activitiesView" style="display:none; margin-top:25px;">
+                    <div id="projectActivities" style="background:white; border-radius:16px; border:1px solid #cbd5e1; overflow:hidden;">
+                        <div style="padding:40px; text-align:center; color:#94a3b8;">Loading activities...</div>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        const API_URL = '/api';
-        const urlParams = new URLSearchParams(window.location.search);
-        const projectId = urlParams.get('id');
+        const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:5000/api' : '/api';
         let currentProject = null;
 
-        // Auth & Role check
-        const currentUser = JSON.parse(localStorage.getItem('opsUser') || '{}');
-        const isAdmin = currentUser.role === 'owner' || currentUser.role === 'teamleader';
-        if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+        // User setup
+        (function initProfile() {
+            const userStr = localStorage.getItem('opsUser');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                document.getElementById('userNameDisplay').innerText = (user.username || 'User').toUpperCase();
+                document.getElementById('userRoleDisplay').innerText = (user.role || 'Employee').toUpperCase();
+                document.getElementById('userInitial').innerText = (user.username ? user.username[0] : '?').toUpperCase();
+            }
+        })();
 
-        function openAddLinkModal() {
-            document.getElementById('addLinkModal').style.display = 'flex';
+        function logout() {
+            localStorage.removeItem('opsUser');
+            window.location.href = 'index.html';
         }
 
-        function closeAddLinkModal() {
-            document.getElementById('addLinkModal').style.display = 'none';
-            document.getElementById('addLinkForm').reset();
-            document.getElementById('modalFlagPreview').innerHTML = '🌐';
+        function switchTab(tab) {
+            document.getElementById('tab-links').classList.toggle('active', tab === 'links');
+            document.getElementById('tab-activities').classList.toggle('active', tab === 'activities');
+            document.getElementById('linksView').style.display = tab === 'links' ? 'block' : 'none';
+            document.getElementById('activitiesView').style.display = tab === 'activities' ? 'block' : 'none';
         }
 
         const countryToCode = {
@@ -364,110 +485,38 @@
         function getFlagHtml(name) {
             const code = countryToCode[name.toLowerCase().trim()];
             if (code) {
-                return `<img src="https://flagcdn.com/w40/${code}.png" style="width: 20px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`;
+                return `<img src="https://flagcdn.com/w40/${code}.png" style="width: 20px; border-radius: 3px;">`;
             }
             return '🌐';
         }
 
-        function updateModalFlag(val) {
-            document.getElementById('modalFlagPreview').innerHTML = getFlagHtml(val);
-        }
-
-        document.getElementById('addLinkForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const country = document.getElementById('newCountryName').value;
-            const url = document.getElementById('newSurveyUrl').value;
-
-            try {
-                let links = [];
-                try { 
-                    links = typeof currentProject.links === 'string' ? JSON.parse(currentProject.links || '[]') : (currentProject.links || []); 
-                } catch (err) { links = []; }
-
-                links.push({ country, url });
-
-                const res = await fetch(`${API_URL}/projects/${projectId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links })
-                });
-
-                if (res.ok) {
-                    closeAddLinkModal();
-                    loadDetails();
-                } else {
-                    alert("Error saving link");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Network error");
-            }
-        });
-
-        async function toggleLinkStatus(idx) {
-            if (!isAdmin) return;
-            try {
-                let links = typeof currentProject.links === 'string' ? JSON.parse(currentProject.links || '[]') : (currentProject.links || []); 
-                const currentStatus = links[idx].status || 'live';
-                links[idx].status = currentStatus === 'live' ? 'pause' : 'live';
-
-                const res = await fetch(`${API_URL}/projects/${projectId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links })
-                });
-
-                if (res.ok) loadDetails();
-                else alert("Error updating link status");
-            } catch (err) {
-                console.error(err);
-                alert("Network error");
-            }
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${tab}`).classList.add('active');
-            
-            if (tab === 'links') {
-                document.getElementById('linksContainer').style.display = 'grid';
-                document.getElementById('projectActivities').style.display = 'none';
-            } else {
-                document.getElementById('linksContainer').style.display = 'none';
-                document.getElementById('projectActivities').style.display = 'block';
-            }
-        }
-
-        async function confirmDeleteActivity(id) {
-            if (confirm("🚨 Delete this activity update?")) {
-                await fetch(`${API_URL}/activities/${id}`, { method: 'DELETE' });
-                loadDetails(); // Reload page data
-            }
-        }
-
         async function loadDetails() {
-            if (!projectId) {
-                document.getElementById('projectInfo').innerHTML = '<div style="color:red; font-weight:bold;">Error: No Project ID provided.</div>';
-                return;
-            }
+            const params = new URLSearchParams(window.location.search);
+            const projectId = params.get('id');
+            const userStr = localStorage.getItem('opsUser');
+            if(!userStr) return;
+            const user = JSON.parse(userStr);
+            const isAdmin = user.role === 'owner' || user.role === 'teamleader';
 
             try {
-                const [pRes, iRes] = await Promise.all([
+                const [pRes, iRes, qRes] = await Promise.all([
                     fetch(`${API_URL}/projects`),
-                    fetch(`${API_URL}/interviews?projectId=${projectId}`)
+                    fetch(`${API_URL}/interviews?projectId=${projectId}`),
+                    fetch(`${API_URL}/activities?projectId=${projectId}`)
                 ]);
-
+                
                 const projects = await pRes.json();
                 const interviews = await iRes.json();
+                const activities = await qRes.json();
                 const p = projects.find(x => x.id === projectId);
                 currentProject = p;
 
                 if (!p) {
-                    document.getElementById('projectInfo').innerHTML = '<div style="color:red; font-weight:bold;">Project not found.</div>';
+                    document.getElementById('projectInfo').innerHTML = '<div style="color:red; padding: 20px;">Project not found.</div>';
                     return;
                 }
 
-                // Render Header
+                // Header
                 const statusClass = `status-${p.status || 'live'}`;
                 document.getElementById('projectInfo').innerHTML = `
                     <div class="project-header">
@@ -481,124 +530,65 @@
                     </div>
                 `;
 
-                // Render Links
+                // Links
                 let links = [];
                 try { 
                     links = typeof p.links === 'string' ? JSON.parse(p.links || '[]') : (p.links || []); 
-                } catch (e) { 
-                    if (p.link) links = [{ url: p.link, country: 'Default' }];
+                } catch (e) {
+                    console.error("Parse error", e);
                 }
 
                 const linksHtml = links.map((l, idx) => {
                     const url = typeof l === 'string' ? l : l.url;
-                    const country = typeof l === 'string' ? 'Unknown' : l.country;
-
+                    const country = typeof l === 'string' ? 'Unknown' : (l.country || 'Global');
                     const lInts = interviews.filter(i => i.linkIndex == idx);
                     const c = lInts.filter(i => i.outcome === 'Complete').length;
                     const t = lInts.filter(i => i.outcome === 'Terminate').length;
                     const q = lInts.filter(i => i.outcome === 'QuotaFull').length;
                     const s = lInts.filter(i => i.outcome === 'Security Terminate').length;
-
-                    const lStatus = typeof l === 'object' ? (l.status || 'live') : 'live';
-                    const isPaused = lStatus === 'pause';
                     const lIr = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
                     const trackingUrl = `${window.location.origin}/start?pid=${p.id}&idx=${idx}&uid=[UID]`;
 
                     return `
-                        <div class="link-card" style="${isPaused ? 'opacity: 0.8; border-color: #fca5a5; background: #fff1f2;' : ''}">
+                        <div class="link-card">
                             <div class="link-header">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div class="country-tag">${getFlagHtml(country)} ${country}</div>
-                                    ${isPaused ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800;">PAUSED</span>' : '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800;">LIVE</span>'}
-                                </div>
-                                <div style="display:flex; gap:8px;">
-                                    ${isAdmin ? `<button class="btn btn-outline" onclick="toggleLinkStatus(${idx})" style="padding: 4px 10px; font-size: 11px;">${isPaused ? '▶️ Live' : '⏸️ Pause'}</button>` : ''}
-                                    ${(!isPaused || isAdmin) ? `
-                                        <button class="btn btn-outline" onclick="copyToClipboard('${trackingUrl}', this, '${p.id}')">Copy Link</button>
-                                    ` : `
-                                        <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">Link Paused</button>
-                                    `}
-                                </div>
+                                <div class="country-tag">${getFlagHtml(country)} ${country}</div>
+                                <button class="btn btn-outline" onclick="copyToClipboard('${trackingUrl}', this, '${p.id}')">Copy Link</button>
                             </div>
-                            <div class="stats-row" style="${isPaused ? 'background: #fff5f5;' : ''}">
+                            <div class="stats-row">
                                 <div class="stat-item"><span class="stat-val" style="color:#059669">${c}</span><span class="stat-lbl">Comp</span></div>
                                 <div class="stat-item"><span class="stat-val" style="color:#f59e0b">${t}</span><span class="stat-lbl">Term</span></div>
                                 <div class="stat-item"><span class="stat-val" style="color:#dc2626">${q}</span><span class="stat-lbl">QF</span></div>
-                                <div class="stat-item"><span class="stat-val" style="color:#6366f1">${lIr}%</span><span class="stat-lbl">IR</span></div>
+                                <div class="stat-item" title="Incidence Rate"><span class="stat-val" style="color:#6366f1">${lIr}%</span><span class="stat-lbl">IR</span></div>
                                 <div class="stat-item"><span class="stat-val" style="color:#94a3b8">${s}</span><span class="stat-lbl">STer</span></div>
                             </div>
-                            <div class="url-box" style="${isPaused ? 'background: #fee2e2;' : ''}">${trackingUrl}</div>
+                            <div class="url-box">${trackingUrl}</div>
                         </div>
                     `;
                 }).join('');
+                document.getElementById('linksContainer').innerHTML = linksHtml || '<div style="padding: 40px; text-align: center; grid-column: 1/-1;">No links added.</div>';
 
-                if (p.status === 'hold' || p.status === 'pause') {
-                    document.getElementById('linksContainer').innerHTML = `
-                        <div style="grid-column: 1/-1; padding: 50px 20px; text-align: center; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 16px; color: #92400e; margin-top: 20px;">
-                            <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
-                            <h2 style="margin: 0; font-weight: 800;">Project is on ${p.status.toUpperCase()}</h2>
-                            <p style="font-size: 15px; opacity: 0.8; margin-top: 10px; max-width: 400px; margin-left: auto; margin-right: auto;">Survey links are currently locked. Please contact the administrator or set the project back to <b>LIVE</b> to access them.</p>
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('linksContainer').innerHTML = linksHtml;
-                }
+                document.getElementById('specsContainer').innerHTML = `<div class="specs-box"><div class="specs-title">📝 Project Specifications</div><div style="white-space: pre-line; color: #4b5563; font-size: 14px;">${p.details || 'No instructions.'}</div></div>`;
 
-                // Render Specs
-                document.getElementById('specsContainer').innerHTML = `
-                    <div class="specs-box">
-                        <div class="specs-title">📝 Project Specifications & Instructions</div>
-                        <div style="white-space: pre-line; color: #4b5563; line-height: 1.6; font-size: 14px;">
-                            ${p.details || 'No instructions provided.'}
+                // Activities
+                document.getElementById('projectActivities').innerHTML = activities.length ? activities.map(a => `
+                    <div style="padding: 15px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px;">
+                        <div style="color:var(--primary)">🔔</div>
+                        <div>
+                            <div style="font-size: 11px; font-weight:700; color: #94a3b8;">${a.timestamp}</div>
+                            <div style="font-size: 14px; margin-top: 4px;">${a.content}</div>
                         </div>
                     </div>
-                `;
+                `).join('') : '<div style="padding:40px; text-align:center; color:#94a3b8;">No activities.</div>';
 
-                // Render Project Activities
-                const allActivities = await (await fetch(`${API_URL}/activities`)).json();
-                const pActivities = allActivities.filter(a => a.projectId === projectId);
-                
-                if (pActivities.length > 0) {
-                    document.getElementById('activityList').innerHTML = pActivities.map(a => `
-                        <div style="padding: 15px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; border-radius: 8px; position: relative;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center;">
-                                <span style="font-size: 11px; color: #94a3b8; font-weight: 700;">${a.timestamp}</span>
-                                <button onclick="confirmDeleteActivity(${a.id})" class="admin-only" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px; font-size: 14px;" title="Delete Update">🗑️</button>
-                            </div>
-                            <div style="font-size: 13px; color: #334155; line-height: 1.4;">${a.content}</div>
-                            ${a.image ? `
-                                <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-                                    <img src="${a.image}" style="width: 100%; max-height: 300px; object-fit: contain; cursor: pointer; display: block;" onclick="window.open('${a.image}', '_blank')">
-                                </div>
-                            ` : ''}
-                        </div>
-                    `).join('');
-                } else {
-                    document.getElementById('activityList').innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">No updates posted for this project.</div>';
-                }
-
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function logClickAndOpen(id, url) {
-            await fetch(`${API_URL}/projects/${id}/click`, { method: 'POST' });
-            window.open(url, '_blank');
+            } catch (err) { console.error(err); }
         }
 
         function copyToClipboard(text, btn, projectId) {
             navigator.clipboard.writeText(text).then(() => {
-                fetch(`${API_URL}/projects/${projectId}/click`, { method: 'POST' });
                 const originalText = btn.innerText;
                 btn.innerText = "COPIED!";
-                btn.style.background = "#dcfce7";
-                btn.style.color = "#166534";
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.style.background = "";
-                    btn.style.color = "";
-                }, 2000);
+                setTimeout(() => btn.innerText = originalText, 2000);
             });
         }
 
