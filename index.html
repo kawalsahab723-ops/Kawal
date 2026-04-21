@@ -1974,7 +1974,7 @@
             'portugal': 'pt', 'pt': 'pt',
             'turkey': 'tr', 'tr': 'tr',
             'saudi arabia': 'sa', 'sa': 'sa', 'ksa': 'sa',
-            'uae': 'ae', 'dubai': 'ae',
+            'uae': 'ae', 'dubai': 'ae', 'united arab emirates': 'ae',
             'singapore': 'sg', 'sg': 'sg',
             'malaysia': 'my', 'my': 'my',
             'indonesia': 'id', 'id': 'id',
@@ -2002,6 +2002,74 @@
             'ireland': 'ie', 'ie': 'ie',
             'hong kong': 'hk', 'hk': 'hk',
             'taiwan': 'tw', 'tw': 'tw',
+            'oman': 'om', 'om': 'om',
+            'kuwait': 'kw', 'kw': 'kw',
+            'qatar': 'qa', 'qa': 'qa',
+            'bahrain': 'bh', 'bh': 'bh',
+            'jordan': 'jo', 'jo': 'jo',
+            'lebanon': 'lb', 'lb': 'lb',
+            'iraq': 'iq', 'iq': 'iq',
+            'algeria': 'dz', 'dz': 'dz',
+            'morocco': 'ma', 'ma': 'ma',
+            'tunisia': 'tn', 'tn': 'tn',
+            'ukraine': 'ua', 'ua': 'ua',
+            'belarus': 'by', 'by': 'by',
+            'kazakhstan': 'kz', 'kz': 'kz',
+            'croatia': 'hr', 'hr': 'hr',
+            'bulgaria': 'bg', 'bg': 'bg',
+            'serbia': 'rs', 'rs': 'rs',
+            'slovakia': 'sk', 'sk': 'sk',
+            'slovenia': 'si', 'si': 'si',
+            'lithuania': 'lt', 'lt': 'lt',
+            'latvia': 'lv', 'lv': 'lv',
+            'estonia': 'ee', 'ee': 'ee',
+            'luxembourg': 'lu', 'lu': 'lu',
+            'malta': 'mt', 'mt': 'mt',
+            'cyprus': 'cy', 'cy': 'cy',
+            'iceland': 'is', 'is': 'is',
+            'venezuela': 've', 've': 've',
+            'ecuador': 'ec', 'ec': 'ec',
+            'bolivia': 'bo', 'bo': 'bo',
+            'paraguay': 'py', 'py': 'py',
+            'uruguay': 'uy', 'uy': 'uy',
+            'costa rica': 'cr', 'cr': 'cr',
+            'panama': 'pa', 'pa': 'pa',
+            'guatemala': 'gt', 'gt': 'gt',
+            'honduras': 'hn', 'hn': 'hn',
+            'el salvador': 'sv', 'sv': 'sv',
+            'nicaragua': 'ni', 'ni': 'ni',
+            'dominican republic': 'do', 'do': 'do',
+            'puerto rico': 'pr', 'pr': 'pr',
+            'jamaica': 'jm', 'jm': 'jm',
+            'trinidad': 'tt', 'tt': 'tt',
+            'albania': 'al', 'al': 'al',
+            'armenia': 'am', 'am': 'am',
+            'azerbaijan': 'az', 'az': 'az',
+            'georgia': 'ge', 'ge': 'ge',
+            'moldova': 'md', 'md': 'md',
+            'monaco': 'mc', 'mc': 'mc',
+            'montenegro': 'me', 'me': 'me',
+            'macedonia': 'mk', 'mk': 'mk',
+            'uzbekistan': 'uz', 'uz': 'uz',
+            'turkmenistan': 'tm', 'tm': 'tm',
+            'kyrgyzstan': 'kg', 'kg': 'kg',
+            'tajikistan': 'tj', 'tj': 'tj',
+            'cambodia': 'kh', 'kh': 'kh',
+            'laos': 'la', 'la': 'la',
+            'myanmar': 'mm', 'mm': 'mm',
+            'mongolia': 'mn', 'mn': 'mn',
+            'nepal': 'np', 'np': 'np',
+            'afghanistan': 'af', 'af': 'af',
+            'ethiopia': 'et', 'et': 'et',
+            'tanzania': 'tz', 'tz': 'tz',
+            'uganda': 'ug', 'ug': 'ug',
+            'senegal': 'sn', 'sn': 'sn',
+            'ivory coast': 'ci', 'ci': 'ci',
+            'cameroon': 'cm', 'cm': 'cm',
+            'angola': 'ao', 'ao': 'ao',
+            'zimbabwe': 'zw', 'zw': 'zw',
+            'mauritius': 'mu', 'mu': 'mu',
+            'global': 'un', 'worldwide': 'un', 'world': 'un'
         };
 
         function updateFlagPreview(input) {
@@ -3186,6 +3254,14 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
 
             const currentFilter = filter.value || 'All';
 
+            // Status sorting logic
+            const statusOrder = { 'live': 1, 'hold': 2, 'pause': 2, 'closed': 3 };
+            const sortedProjects = [...projects].sort((a, b) => {
+                const sA = statusOrder[a.status || 'live'] || 99;
+                const sB = statusOrder[b.status || 'live'] || 99;
+                return sA - sB;
+            });
+
             // Render Dashboard Widgets
             if (activities) renderActivities(activities);
             if (dailyStatuses) renderDashboardDailyFeed(dailyStatuses);
@@ -3193,9 +3269,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             // Build Quick Project List for Dashboard
             const dashProjList = document.getElementById('dashboardProjectList');
             if (dashProjList) {
-                dashProjList.innerHTML = projects.slice(0, 5).map(p => `
-                    <div onclick="window.location.href='project.html?id=${p.id}'" style="padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                        <span style="font-weight:700; font-size:13px; color: var(--teal);">#${p.id} ${p.name}</span>
+                dashProjList.innerHTML = sortedProjects.slice(0, 5).map(p => `
+                    <div onclick="window.location.href='project.html?id=${encodeURIComponent(p.id)}'" style="padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                        <span style="font-weight:700; font-size:13px; color: var(--teal);">${p.id.startsWith('#') ? p.id : '#' + p.id} ${p.name}</span>
                         <span class="status-pill status-${p.status || 'live'}" style="font-size:10px;">${(p.status || 'live').toUpperCase()}</span>
                     </div>
                 `).join('') || '<p style="text-align:center; color:#94a3b8; padding:20px;">No projects yet.</p>';
@@ -3207,9 +3283,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
 
             // Build Grid HTML in one go
             let gridHtml = '';
-            let cLive = 0, cHold = 0, cClosed = 0, cTotal = projects.length;
+            let cLive = 0, cHold = 0, cClosed = 0, cTotal = sortedProjects.length;
 
-            projects.forEach(p => {
+            sortedProjects.forEach(p => {
                 const status = p.status || 'live';
                 if (status === 'live') cLive++;
                 if (status === 'hold' || status === 'pause') cHold++;
