@@ -16,7 +16,7 @@
             --success: #22c55e;
             --error: #ef4444;
             --warning: #f59e0b;
-            --bg: #f8fafc;
+            --bg: #e0f2fe;
             --card: #ffffff;
             --sidebar: #111827;
         }
@@ -61,9 +61,9 @@
             background: white;
             padding: 30px;
             border-radius: 16px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
             margin-bottom: 30px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
         }
 
         .project-id {
@@ -136,13 +136,13 @@
 
         .stats-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             background: #f8fafc;
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 20px;
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0;
         }
 
         .stat-item {
@@ -157,17 +157,18 @@
         }
 
         .stat-lbl {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
-            color: #64748b;
+            color: #475569;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .url-box {
             font-size: 12px;
-            color: #64748b;
-            background: #f1f5f9;
+            color: #334155;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
             padding: 12px;
             border-radius: 8px;
             word-break: break-all;
@@ -333,61 +334,31 @@
         }
 
         const countryToCode = {
-            'india': 'in', 'in': 'in',
-            'usa': 'us', 'us': 'us', 'united states': 'us', 'america': 'us',
-            'uk': 'gb', 'united kingdom': 'gb', 'britain': 'gb', 'england': 'gb',
-            'canada': 'ca', 'ca': 'ca',
-            'australia': 'au', 'au': 'au',
-            'germany': 'de', 'de': 'de',
-            'france': 'fr', 'fr': 'fr',
-            'japan': 'jp', 'jp': 'jp',
-            'china': 'cn', 'cn': 'cn',
-            'brazil': 'br', 'br': 'br',
-            'mexico': 'mx', 'mx': 'mx',
-            'italy': 'it', 'it': 'it',
-            'spain': 'es', 'es': 'es',
-            'russia': 'ru', 'ru': 'ru',
-            'south korea': 'kr', 'korea': 'kr', 'kr': 'kr',
-            'netherlands': 'nl', 'nl': 'nl', 'holland': 'nl',
-            'sweden': 'se', 'se': 'se',
-            'norway': 'no', 'no': 'no',
-            'denmark': 'dk', 'dk': 'dk',
-            'finland': 'fi', 'fi': 'fi',
-            'switzerland': 'ch', 'ch': 'ch',
-            'austria': 'at', 'at': 'at',
-            'belgium': 'be', 'be': 'be',
-            'poland': 'pl', 'pl': 'pl',
-            'portugal': 'pt', 'pt': 'pt',
-            'turkey': 'tr', 'tr': 'tr',
-            'saudi arabia': 'sa', 'sa': 'sa', 'ksa': 'sa',
-            'uae': 'ae', 'dubai': 'ae',
-            'singapore': 'sg', 'sg': 'sg',
-            'malaysia': 'my', 'my': 'my',
-            'indonesia': 'id', 'id': 'id',
-            'thailand': 'th', 'th': 'th',
-            'vietnam': 'vn', 'vn': 'vn',
-            'philippines': 'ph', 'ph': 'ph',
-            'pakistan': 'pk', 'pk': 'pk',
-            'bangladesh': 'bd', 'bd': 'bd',
-            'sri lanka': 'lk', 'lk': 'lk',
-            'new zealand': 'nz', 'nz': 'nz',
-            'south africa': 'za', 'za': 'za',
-            'nigeria': 'ng', 'ng': 'ng',
-            'kenya': 'ke', 'ke': 'ke',
-            'egypt': 'eg', 'eg': 'eg',
-            'ghana': 'gh', 'gh': 'gh',
-            'argentina': 'ar', 'ar': 'ar',
-            'colombia': 'co', 'co': 'co',
-            'chile': 'cl', 'cl': 'cl',
-            'peru': 'pe', 'pe': 'pe',
-            'greece': 'gr', 'gr': 'gr',
-            'czech republic': 'cz', 'czechia': 'cz', 'cz': 'cz',
-            'hungary': 'hu', 'hu': 'hu',
-            'romania': 'ro', 'ro': 'ro',
-            'israel': 'il', 'il': 'il',
-            'ireland': 'ie', 'ie': 'ie',
-            'hong kong': 'hk', 'hk': 'hk',
-            'taiwan': 'tw', 'tw': 'tw',
+            'india': 'in', 'in': 'in', 'united states': 'us', 'usa': 'us', 'us': 'us', 'america': 'us',
+            'united kingdom': 'gb', 'uk': 'gb', 'gb': 'gb', 'britain': 'gb', 'england': 'gb',
+            'canada': 'ca', 'ca': 'ca', 'australia': 'au', 'au': 'au',
+            'afghanistan': 'af', 'albania': 'al', 'algeria': 'dz', 'andorra': 'ad', 'angola': 'ao', 'antigua': 'ag', 'argentina': 'ar', 'armenia': 'am', 'austria': 'at', 'azerbaijan': 'az',
+            'bahamas': 'bs', 'bahrain': 'bh', 'bangladesh': 'bd', 'barbados': 'bb', 'belarus': 'by', 'belgium': 'be', 'belize': 'bz', 'benin': 'bj', 'bhutan': 'bt', 'bolivia': 'bo', 'bosnia': 'ba', 'botswana': 'bw', 'brazil': 'br', 'brunei': 'bn', 'bulgaria': 'bg', 'burkina faso': 'bf', 'burundi': 'bi',
+            'cambodia': 'kh', 'cameroon': 'cm', 'cape verde': 'cv', 'chad': 'td', 'chile': 'cl', 'china': 'cn', 'colombia': 'co', 'comoros': 'km', 'congo': 'cg', 'costa rica': 'cr', 'croatia': 'hr', 'cuba': 'cu', 'cyprus': 'cy', 'czech republic': 'cz', 'czechia': 'cz',
+            'denmark': 'dk', 'djibouti': 'dj', 'dominica': 'dm', 'dominican republic': 'do',
+            'ecuador': 'ec', 'egypt': 'eg', 'el salvador': 'sv', 'equatorial guinea': 'gq', 'eritrea': 'er', 'estonia': 'ee', 'ethiopia': 'et',
+            'fiji': 'fj', 'finland': 'fi', 'france': 'fr',
+            'gabon': 'ga', 'gambia': 'gm', 'georgia': 'ge', 'germany': 'de', 'ghana': 'gh', 'greece': 'gr', 'grenada': 'gd', 'guatemala': 'gt', 'guinea': 'gn', 'guyana': 'gy',
+            'haiti': 'ht', 'honduras': 'hn', 'hungary': 'hu',
+            'iceland': 'is', 'indonesia': 'id', 'iran': 'ir', 'iraq': 'iq', 'ireland': 'ie', 'israel': 'il', 'italy': 'it', 'ivory coast': 'ci',
+            'jamaica': 'jm', 'japan': 'jp', 'jordan': 'jo',
+            'kazakhstan': 'kz', 'kenya': 'ke', 'kiribati': 'ki', 'kuwait': 'kw', 'kyrgyzstan': 'kg',
+            'laos': 'la', 'latvia': 'lv', 'lebanon': 'lb', 'lesotho': 'ls', 'liberia': 'lr', 'libya': 'ly', 'liechtenstein': 'li', 'lithuania': 'lt', 'luxembourg': 'lu',
+            'macedonia': 'mk', 'madagascar': 'mg', 'malawi': 'mw', 'malaysia': 'my', 'maldives': 'mv', 'mali': 'ml', 'malta': 'mt', 'mauritania': 'mr', 'mauritius': 'mu', 'mexico': 'mx', 'micronesia': 'fm', 'moldova': 'md', 'monaco': 'mc', 'mongolia': 'mn', 'montenegro': 'me', 'morocco': 'ma', 'mozambique': 'mz', 'myanmar': 'mm',
+            'namibia': 'na', 'nauru': 'nr', 'nepal': 'np', 'netherlands': 'nl', 'new zealand': 'nz', 'nicaragua': 'ni', 'niger': 'ne', 'nigeria': 'ng', 'north korea': 'kp', 'norway': 'no',
+            'oman': 'om', 'pakistan': 'pk', 'palau': 'pw', 'panama': 'pa', 'papua new guinea': 'pg', 'paraguay': 'py', 'peru': 'pe', 'philippines': 'ph', 'poland': 'pl', 'portugal': 'pt',
+            'qatar': 'qa', 'romania': 'ro', 'russia': 'ru', 'rwanda': 'rw',
+            'saint lucia': 'lc', 'samoa': 'ws', 'san marino': 'sm', 'saudi arabia': 'sa', 'senegal': 'sn', 'serbia': 'rs', 'seychelles': 'sc', 'singapore': 'sg', 'slovakia': 'sk', 'slovenia': 'si', 'solomon islands': 'sb', 'somalia': 'so', 'south africa': 'za', 'south korea': 'kr', 'korea': 'kr', 'spain': 'es', 'sri lanka': 'lk', 'sudan': 'sd', 'suriname': 'sr', 'swaziland': 'sz', 'sweden': 'se', 'switzerland': 'ch', 'syria': 'sy',
+            'taiwan': 'tw', 'tajikistan': 'tj', 'tanzania': 'tz', 'thailand': 'th', 'togo': 'tg', 'tonga': 'to', 'tunisia': 'tn', 'turkey': 'tr', 'turkmenistan': 'tm', 'tuvalu': 'tv',
+            'uganda': 'ug', 'ukraine': 'ua', 'uae': 'ae', 'dubai': 'ae', 'uruguay': 'uy', 'uzbekistan': 'uz',
+            'vanuatu': 'vu', 'vatican': 'va', 'venezuela': 've', 'vietnam': 'vn',
+            'yemen': 'ye', 'zambia': 'zm', 'zimbabwe': 'zw',
+            'global': 'eu', 'worldwide': 'un'
         };
 
         function getFlagHtml(name) {
@@ -504,8 +475,8 @@
                         <h1 class="project-title">${p.name}</h1>
                         <div style="display:flex; align-items:center; gap:20px;">
                             <span class="status-pill ${statusClass}">${(p.status || 'live').toUpperCase()}</span>
-                            <span style="font-size:14px; color:#64748b;">Target Goal: <strong>${p.goal || 0}</strong></span>
-                            <span style="font-size:14px; color:#64748b;">Total Clicks: <strong style="color:var(--primary)">${p.clicks || 0}</strong></span>
+                            <span style="font-size:14px; color:#475569;">Target Goal: <strong style="color: #0f172a;">${p.goal || 0}</strong></span>
+                            <span style="font-size:14px; color:#475569;">Total Clicks: <strong style="color:var(--primary)">${p.clicks || 0}</strong></span>
                         </div>
                     </div>
                 `;
@@ -531,6 +502,7 @@
                     const lStatus = typeof l === 'object' ? (l.status || 'live') : 'live';
                     const isPaused = lStatus === 'pause';
                     const lIr = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
+                    const trackingUrl = `${window.location.origin}/start?pid=${p.id}&idx=${idx}&uid=[UID]`;
 
                     return `
                         <div class="link-card" style="${isPaused ? 'opacity: 0.8; border-color: #fca5a5; background: #fff1f2;' : ''}">
@@ -542,7 +514,7 @@
                                 <div style="display:flex; gap:8px;">
                                     ${isAdmin ? `<button class="btn btn-outline" onclick="toggleLinkStatus(${idx})" style="padding: 4px 10px; font-size: 11px;">${isPaused ? '▶️ Live' : '⏸️ Pause'}</button>` : ''}
                                     ${(!isPaused || isAdmin) ? `
-                                        <button class="btn btn-outline" onclick="copyToClipboard('${url}', this, '${p.id}')">Copy Link</button>
+                                        <button class="btn btn-outline" onclick="copyToClipboard('${trackingUrl}', this, '${p.id}')">Copy Link</button>
                                     ` : `
                                         <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">Link Paused</button>
                                     `}
@@ -555,7 +527,7 @@
                                 <div class="stat-item"><span class="stat-val" style="color:#6366f1">${lIr}%</span><span class="stat-lbl">IR</span></div>
                                 <div class="stat-item"><span class="stat-val" style="color:#94a3b8">${s}</span><span class="stat-lbl">STer</span></div>
                             </div>
-                            <div class="url-box" style="${isPaused ? 'background: #fee2e2;' : ''}">${url}</div>
+                            <div class="url-box" style="${isPaused ? 'background: #fee2e2;' : ''}">${trackingUrl}</div>
                         </div>
                     `;
                 }).join('');

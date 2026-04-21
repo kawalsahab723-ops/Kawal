@@ -64,10 +64,60 @@ app.get("/", (req, res) => {
 // Catch-all route for SPA (Redirects unknown paths to index.html)
 app.get("*", (req, res, next) => {
     // If it's an API request, let it continue (it will 404 later if no route)
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/start')) {
         return next();
     }
     res.sendFile(path.resolve(__dirname, "index.html"));
+});
+
+// 5. RESPONDENT ENTRY LINK
+app.get("/start", async (req, res) => {
+    const { pid, uid, idx } = req.query;
+    if (!pid || !uid) return res.status(400).send("<h1>Missing Parameters</h1><p>Project ID (pid) and Respondent UID (uid) are required.</p>");
+
+    try {
+        const project = await Project.findOne({ id: pid });
+        if (!project || project.status !== 'live') {
+            return res.status(403).send("<h1>Access Denied</h1><p>Survey is currently closed or paused.</p>");
+        }
+
+        let links = [];
+        try { links = typeof project.links === 'string' ? JSON.parse(project.links) : (project.links || []); } catch(e) {}
+        
+        const linkIndex = parseInt(idx) || 0;
+        let targetUrl = '';
+        if (Array.isArray(links) && links[linkIndex]) {
+            targetUrl = typeof links[linkIndex] === 'string' ? links[linkIndex] : links[linkIndex].url;
+        } else if (links.length > 0) {
+            targetUrl = typeof links[0] === 'string' ? links[0] : links[0].url;
+        }
+
+        if (!targetUrl) return res.status(404).send("<h1>Error</h1><p>Survey link not found.</p>");
+
+        const finalIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+        const now = new Date();
+        const entryTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
+        const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+        // Upsert Interview record for entry tracking
+        await Interview.findOneAndUpdate(
+            { projectId: pid, respId: uid },
+            { 
+               $setOnInsert: { linkIndex, outcome: 'In-Progress', entryTime, ip: finalIp, timestamp }
+            },
+            { upsert: true }
+        );
+
+        // Update Project clicks
+        await Project.updateOne({ id: pid }, { $inc: { clicks: 1 } });
+
+        // Replace UID placeholders if present
+        let finalUrl = targetUrl.replace(/\[UID\]/gi, uid).replace(/\[ID\]/gi, uid);
+
+        res.redirect(finalUrl);
+    } catch (err) {
+        res.status(500).send("Server Error: " + err.message);
+    }
 });
 
 /* ======================
@@ -117,7 +167,8 @@ const messageSchema = new mongoose.Schema({
     sender: String,
     receiver: { type: String, default: 'global' },
     content: String,
-    timestamp: { type: String, default: () => new Date().toISOString() }
+    timestamp: { type: String, default: () => new Date().toISOString() },
+    createdAt: { type: Date, default: Date.now, expires: 86400 } // Auto-delete after 24 hours (86400 seconds)
 });
 const Message = mongoose.model('Message', messageSchema);
 
@@ -449,7 +500,9 @@ app.post("/api/save", async (req, res) => {
     const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     try {
-        const interview = await Interview.create({ projectId, respId: userId, outcome, exitTime, ip: finalIp, timestamp });
+        const query = { projectId, respId: userId };
+        const update = { outcome, exitTime, ip: finalIp, timestamp };
+        const interview = await Interview.findOneAndUpdate(query, update, { new: true, upsert: true });
         
         let column = "";
         if (status === 'complete') column = "completes";
@@ -584,6 +637,34 @@ app.post("/api/messages", async (req, res) => {
     const { sender, receiver, content } = req.body;
     const msg = await Message.create({ sender, receiver: receiver || 'global', content });
     res.json(msg);
+});
+
+app.delete("/api/messages/:id", async (req, res) => {
+    try {
+        await Message.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete("/api/messages", async (req, res) => {
+    try {
+        await Message.deleteMany({ receiver: 'global' });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete("/api/messages/clear-my", async (req, res) => {
+    const { sender, receiver } = req.body;
+    try {
+        await Message.deleteMany({ sender, receiver });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get("/api/attendance", async (req, res) => {
