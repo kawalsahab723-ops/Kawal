@@ -111,8 +111,23 @@ app.get("/start", async (req, res) => {
         // Update Project clicks
         await Project.updateOne({ id: pid }, { $inc: { clicks: 1 } });
 
+        targetUrl = targetUrl.trim();
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'https://' + targetUrl;
+        }
+
         // Replace UID placeholders if present
         let finalUrl = targetUrl.replace(/\[UID\]/gi, uid).replace(/\[ID\]/gi, uid);
+
+        // Fallback 1: If original URL ends with an equals sign (e.g. TOID=)
+        if (finalUrl === targetUrl && finalUrl.endsWith('=')) {
+            finalUrl += uid;
+        } 
+        // Fallback 2: If no placeholder was replaced and no trailing =, append it
+        else if (finalUrl === targetUrl && !finalUrl.includes(uid)) {
+            const separator = finalUrl.includes('?') ? '&' : '?';
+            finalUrl += `${separator}uid=${uid}`;
+        }
 
         res.redirect(finalUrl);
     } catch (err) {
