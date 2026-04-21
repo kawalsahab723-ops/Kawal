@@ -1795,13 +1795,16 @@
                             </div>
                             <div id="attendanceMonthPickerWrapper"
                                 style="display: none; gap: 10px; align-items: center;">
-                                <button id="btnClearMonthly" onclick="clearMonthlyData()" class="btn btn-outline" 
-                                    style="padding: 8px 12px; font-size: 11px; border-color: var(--error); color: var(--error); margin: 0; display: none;">Clear Month</button>
+                                <button id="btnClearMonthly" onclick="clearMonthlyData()" class="btn btn-outline"
+                                    style="padding: 8px 12px; font-size: 11px; border-color: var(--error); color: var(--error); margin: 0; display: none;">Clear
+                                    Month</button>
                                 <label style="font-size: 13px; font-weight: 700; color: #64748b;">Search:</label>
-                                <input type="text" id="statusReportSearch" oninput="loadMonthlyStatusReport()" placeholder="By Name..."
+                                <input type="text" id="statusReportSearch" oninput="loadMonthlyStatusReport()"
+                                    placeholder="By Name..."
                                     style="padding: 8px 15px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; width: 140px; display: none;">
                                 <label style="font-size: 13px; font-weight: 700; color: #64748b;">Select Month:</label>
-                                <input type="month" id="attendanceMonth" onchange="loadMonthlyStatusReport(); loadMonthlyAttendance();"
+                                <input type="month" id="attendanceMonth"
+                                    onchange="loadMonthlyStatusReport(); loadMonthlyAttendance();"
                                     style="padding: 8px 15px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; width: 170px;">
                             </div>
                         </div>
@@ -1815,7 +1818,8 @@
                             style="width: auto; padding: 8px 20px; border: none; border-radius: 8px;">Monthly
                             Sheet</button>
                         <button id="btnStatusReport" onclick="toggleAttendanceView('report')" class="btn btn-outline"
-                            style="width: auto; padding: 8px 20px; border: none; border-radius: 8px;">Status Report</button>
+                            style="width: auto; padding: 8px 20px; border: none; border-radius: 8px;">Status
+                            Report</button>
                     </div>
 
                     <div id="dailyAttendanceView" style="width: 100%; margin: 0 auto;">
@@ -2049,7 +2053,7 @@
             const container = document.getElementById('modalLinksContainer');
             const mainId = document.getElementById('mProjId');
             const isMulti = mainId && (mainId.value.includes(' - ') || mainId.value.includes('/') || mainId.value.includes('&'));
-            
+
             const div = document.createElement('div');
             div.className = 'link-input-group';
             div.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center; animation: slideDown 0.2s ease;';
@@ -2650,7 +2654,7 @@
 
                     const canDelete = isMe || (currentUser && currentUser.username.toLowerCase() === 'kawal') || (currentUser && currentUser.role === 'owner');
 
-                    const userColors = (function(un) {
+                    const userColors = (function (un) {
                         const map = {
                             'dev': { bg: '#ffedd5', border: '#f97316', color: '#9a3412' },
                             'anish': { bg: '#e0e7ff', border: '#6366f1', color: '#3730a3' },
@@ -3717,7 +3721,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 ]);
 
                 let allUsers = [];
-                try { allUsers = await usersRes.json(); } catch(e) { console.error("User Load Error", e); }
+                try { allUsers = await usersRes.json(); } catch (e) { console.error("User Load Error", e); }
                 if (!Array.isArray(allUsers)) allUsers = [];
 
                 if (searchQuery) {
@@ -3731,7 +3735,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     const datePart = (r.timestamp || '').substring(0, 10);
                     if (!statusMap[r.username]) statusMap[r.username] = {};
                     if (!statusMap[r.username][datePart]) statusMap[r.username][datePart] = { sum: 0, count: 0 };
-                    
+
                     // Count this as one entry
                     statusMap[r.username][datePart].count += 1;
 
@@ -3740,7 +3744,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     const contentValues = (r.content || '').replace(/\d{1,4}[/-]\d{1,2}[/-]\d{2,4}/g, ''); // Remove date-like strings
                     const numbers = contentValues.match(/\b\d+\b/g);
                     const sum = numbers ? numbers.reduce((acc, num) => acc + parseInt(num), 0) : 0;
-                    
+
                     statusMap[r.username][datePart].sum += sum;
                 });
 
@@ -3768,10 +3772,10 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     for (let d = 1; d <= daysInMonth; d++) {
                         const dateStr = `${month}-${String(d).padStart(2, '0')}`;
                         const dayData = (statusMap[u.username] || {})[dateStr] || { sum: 0, count: 0 };
-                        
+
                         totalMonthSum += dayData.sum;
                         totalMonthCount += dayData.count;
-                        
+
                         let bgColor = '#fff';
                         let text = '-';
                         if (dayData.count > 0) {
@@ -3808,7 +3812,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
         async function loadMonthlyAttendance() {
             const table = document.getElementById('monthlyAttendanceTable');
             if (!table) return;
-            
+
             const monthInput = document.getElementById('attendanceMonth');
             if (!monthInput.value) monthInput.value = new Date().toISOString().substring(0, 7);
             const month = monthInput.value;
@@ -3878,7 +3882,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 bodyHtml += `</tbody>`;
 
                 table.innerHTML = headerHtml + bodyHtml;
-            } catch (e) { 
+            } catch (e) {
                 console.error("Attendance Load Error:", e);
                 table.innerHTML = `<tr><td colspan="35" style="text-align:center; padding:50px; color:red;">Failed to load data. Please ensure server is active.</td></tr>`;
             }
