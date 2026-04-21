@@ -3298,8 +3298,8 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                             <td>${entry.loi || 0}m</td>
                             <td>${entry.entryTime || 'N/A'}</td>
                             <td>${entry.exitTime || 'N/A'}</td>
-                            <td style="font-size: 11px; color: #1e40af; font-weight: 600;">${entry.entryIp || entry.ip || 'N/A'}</td>
-                            <td style="font-size: 11px; color: #991b1b; font-weight: 600;">${entry.exitIp || '–'}</td>
+                            <td style="font-size: 11px; color: #1e40af; font-weight: 600;">${(entry.entryIp || entry.ip || 'N/A').split(',')[0]}</td>
+                            <td style="font-size: 11px; color: #991b1b; font-weight: 600;">${(entry.exitIp || '').split(',')[0] || '–'}</td>
                             <td>${entry.timestamp}</td>
                         </tr>
                     `;
