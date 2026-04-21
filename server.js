@@ -12,13 +12,36 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
+const PORT = process.env.PORT || 5000;
+const app = express();
+
+// 1. START LISTENING IMMEDIATELY (Crucial for Cloud Services like Render)
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`📡 Server is now listening on port ${PORT}`);
+    console.log(`🚀 Healthcheck ready at /healthcheck`);
+});
+
+// 2. MIDDLEWARE
+app.use(cors());
+app.use(express.json());
+
+// Health Check for Render with Version & DB Status
+app.get("/healthcheck", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        version: "2.0-Bulletproof",
+        database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected",
+        time: new Date().toLocaleString()
+    });
+});
+app.use(express.static(path.resolve(__dirname)));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+
+// 4. DIRECTORY LOGIC
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+    try { fs.mkdirSync(uploadDir); } catch(e) {}
 }
-
-// Multer Config
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => {
@@ -26,15 +49,7 @@ const storage = multer.diskStorage({
         cb(null, uniqueSuffix + '-' + file.originalname);
     }
 });
-const upload = multer({ storage: storage });
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Serve static files from the root directory
-app.use(express.static(path.resolve(__dirname)));
-app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+const upload = multer({ storage });
 
 // Main Route - Move this up to ensure it catches the root request
 app.get("/", (req, res) => {
@@ -42,8 +57,17 @@ app.get("/", (req, res) => {
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send("index.html not found in " + __dirname);
+        res.status(404).send("index.html not found. Check directory structure.");
     }
+});
+
+// Catch-all route for SPA (Redirects unknown paths to index.html)
+app.get("*", (req, res, next) => {
+    // If it's an API request, let it continue (it will 404 later if no route)
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+        return next();
+    }
+    res.sendFile(path.resolve(__dirname, "index.html"));
 });
 
 /* ======================
@@ -133,23 +157,26 @@ const Setting = mongoose.model('Setting', settingSchema);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-    console.error("❌ CRITICAL ERROR: MONGODB_URI is not defined in environment variables!");
-} else {
-    mongoose.connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-    })
-    .then(async () => {
-        console.log("🚀 Connected to MongoDB Atlas");
+// Background Database Connection (Non-blocking)
+console.log("🔌 Initiating background MongoDB connection...");
+mongoose.set('bufferCommands', false); // Disable buffering to prevent hanging on operations
+mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000, 
+    socketTimeoutMS: 45000,
+})
+.then(async () => {
+    console.log("🚀 Connected to MongoDB Atlas");
+    try {
         await seedUsers();
         await seedSettings();
-    })
-    .catch(err => {
-        console.error("❌ MongoDB Connection Error:", err.message);
-        console.log("⚠️ Server will continue to run, but database features may fail.");
-    });
-}
+    } catch (e) {
+        console.error("⚠️ Seeding Error (Non-fatal):", e.message);
+    }
+})
+.catch(err => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+    console.log("⚠️ Application will run in offline mode (DB features disabled).");
+});
 
 async function seedUsers() {
     const defaultUsers = [
@@ -327,8 +354,12 @@ app.delete("/api/activities", async (req, res) => {
 });
 
 app.delete("/api/activities/:id", async (req, res) => {
-    await Activity.deleteOne({ _id: req.params.id });
-    res.json({ message: "Activity deleted" });
+    try {
+        await Activity.deleteOne({ _id: req.params.id });
+        res.json({ message: "Activity deleted" });
+    } catch (err) {
+        res.status(400).json({ error: "Invalid ID" });
+    }
 });
 
 app.put("/api/projects/:id", async (req, res) => {
@@ -482,9 +513,61 @@ app.post("/api/daily-status", async (req, res) => {
     res.json(status);
 });
 
+app.get("/api/daily-status/monthly", async (req, res) => {
+    const { month } = req.query; // YYYY-MM
+    if (!month) return res.status(400).json({ error: "Month required" });
+    try {
+        const regex = new RegExp(`^${month}`);
+        await DailyStatus.deleteMany({ timestamp: { $regex: regex } });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.delete("/api/daily-status/:id", async (req, res) => {
-    await DailyStatus.deleteOne({ _id: req.params.id });
-    res.json({ success: true });
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+    }
+    
+    // Check if DB is connected before trying to delete
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ error: "Database not connected. Please check Mongo Atlas IP whitelist." });
+    }
+
+    try {
+        const result = await DailyStatus.deleteOne({ _id: id });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: "Status not found" });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Delete Error:", err.message);
+        res.status(500).json({ error: "Database error during deletion" });
+    }
+});
+
+// Global Delete DISABLED for safety (Anti-Mass Delete Lock)
+/*
+app.delete("/api/daily-status", async (req, res) => {
+    try {
+        await DailyStatus.deleteMany({});
+        res.json({ success: true, message: "All statuses cleared" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+*/
+
+// Global Delete for Daily Status (Clear All) - Restored for Admin use
+app.delete("/api/daily-status", async (req, res) => {
+    try {
+        await DailyStatus.deleteMany({});
+        res.json({ success: true, message: "All statuses cleared" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get("/api/messages", async (req, res) => {
@@ -514,7 +597,35 @@ app.post("/api/attendance", async (req, res) => {
     res.json({ success: true });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`📡 Server running on port ${PORT}`);
+// Monthly Attendance Report
+app.get("/api/attendance/monthly", async (req, res) => {
+    const { month } = req.query; // YYYY-MM
+    try {
+        const regex = new RegExp(`^${month}`);
+        const records = await Attendance.find({ date: { $regex: regex } });
+        res.json(records);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Missing Monthly Delete for Attendance
+app.delete("/api/attendance/monthly", async (req, res) => {
+    const { month } = req.query; // YYYY-MM
+    if (!month) return res.status(400).json({ error: "Month required" });
+    try {
+        await Attendance.deleteMany({ date: { $regex: new RegExp(`^${month}`) } });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Prevent server from crashing on unhandled errors
+process.on('uncaughtException', (err) => {
+    console.error('💥 CRITICAL: Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
 });
