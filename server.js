@@ -153,12 +153,6 @@ app.get("/start", async (req, res) => {
     }
 });
 
-        res.redirect(finalUrl);
-    } catch (err) {
-        res.status(500).send("Server Error: " + err.message);
-    }
-});
-
 /* ======================
    📦 MONGODB SCHEMAS
    ====================== */
