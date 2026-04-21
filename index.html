@@ -1569,7 +1569,8 @@
                                         <th>LOI</th>
                                         <th>Entry Time</th>
                                         <th>Exit Time</th>
-                                        <th>IP Address</th>
+                                        <th>Entry IP</th>
+                                        <th>Exit IP</th>
                                         <th>Logged At</th>
                                     </tr>
                                 </thead>
@@ -3297,7 +3298,8 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                             <td>${entry.loi || 0}m</td>
                             <td>${entry.entryTime || 'N/A'}</td>
                             <td>${entry.exitTime || 'N/A'}</td>
-                            <td>${entry.ip || 'N/A'}</td>
+                            <td style="font-size: 11px; color: #1e40af; font-weight: 600;">${entry.entryIp || entry.ip || 'N/A'}</td>
+                            <td style="font-size: 11px; color: #991b1b; font-weight: 600;">${entry.exitIp || '–'}</td>
                             <td>${entry.timestamp}</td>
                         </tr>
                     `;

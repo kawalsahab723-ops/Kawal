@@ -103,7 +103,7 @@ app.get("/start", async (req, res) => {
         await Interview.findOneAndUpdate(
             { projectId: pid, respId: uid },
             { 
-               $setOnInsert: { linkIndex, outcome: 'In-Progress', entryTime, ip: finalIp, timestamp }
+               $setOnInsert: { linkIndex, outcome: 'In-Progress', entryTime, entryIp: finalIp, ip: finalIp, timestamp }
             },
             { upsert: true }
         );
@@ -173,7 +173,9 @@ const interviewSchema = new mongoose.Schema({
     loi: { type: Number, default: 0 },
     entryTime: { type: String, default: '' },
     exitTime: { type: String, default: '' },
-    ip: { type: String, default: '' },
+    entryIp: { type: String, default: '' },
+    exitIp: { type: String, default: '' },
+    ip: { type: String, default: '' }, // Keep for legacy
     timestamp: { type: String, default: () => new Date().toLocaleString() }
 });
 const Interview = mongoose.model('Interview', interviewSchema);
@@ -516,7 +518,7 @@ app.post("/api/save", async (req, res) => {
 
     try {
         const query = { projectId, respId: userId };
-        const update = { outcome, exitTime, ip: finalIp, timestamp };
+        const update = { outcome, exitTime, exitIp: finalIp, ip: finalIp, timestamp };
         const interview = await Interview.findOneAndUpdate(query, update, { new: true, upsert: true });
         
         let column = "";
