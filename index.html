@@ -2037,15 +2037,26 @@
             }
         }
 
+        function checkMultiPid(input) {
+            const val = input.value || '';
+            const isMulti = val.includes(' - ') || val.includes('/') || val.includes('&') || (val.includes(' ') && val.trim().split(/\s+/).length > 1 && !val.includes('-'));
+            document.querySelectorAll('.mProjLinkPidInput').forEach(el => {
+                el.style.display = isMulti ? 'block' : 'none';
+            });
+        }
+
         function addLinkField() {
             const container = document.getElementById('modalLinksContainer');
+            const mainId = document.getElementById('mProjId');
+            const isMulti = mainId && (mainId.value.includes(' - ') || mainId.value.includes('/') || mainId.value.includes('&'));
+            
             const div = document.createElement('div');
             div.className = 'link-input-group';
             div.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center; animation: slideDown 0.2s ease;';
             div.innerHTML = `
                 <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
                 <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
-                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal);">
+                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal); display: ${isMulti ? 'block' : 'none'};">
                 <input type="url" class="mProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;" oninput="handleLinkInput(this)">
                 <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
             `;
@@ -2089,7 +2100,7 @@
                 <form id="newProjectModalForm">
                     <div class="form-group">
                         <label>Project ID (Unique Code)</label>
-                        <input type="text" id="mProjId" required placeholder="e.g. PRJ_101">
+                        <input type="text" id="mProjId" required placeholder="e.g. PRJ_101" oninput="checkMultiPid(this)">
                     </div>
                     <div class="form-group">
                         <label>Project Name</label>
@@ -2102,7 +2113,7 @@
                             <div class="link-input-group" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                                 <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
                                 <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
-                                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal);">
+                                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal); display: none;">
                                 <input type="url" class="mProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;">
                                 <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
                             </div>
