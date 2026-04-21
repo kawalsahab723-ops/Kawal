@@ -527,8 +527,8 @@
                 const statusClass = `status-${p.status || 'live'}`;
                 document.getElementById('projectInfo').innerHTML = `
                     <div class="project-header">
-                        <span class="project-id">#${p.id}</span>
-                        <h1 class="project-title">${p.name}</h1>
+                        <span class="project-id" style="border-radius: 6px; padding: 4px 10px;">${p.name}</span>
+                        <h1 class="project-title">#${p.id}</h1>
                         <div style="display:flex; align-items:center; gap:20px;">
                             <span class="status-pill ${statusClass}">${(p.status || 'live').toUpperCase()}</span>
                             <span style="font-size:14px; color:#475569;">Target Goal: <strong style="color: #0f172a;">${p.goal || 0}</strong></span>

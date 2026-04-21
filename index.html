@@ -1316,12 +1316,14 @@
             border: none;
             cursor: pointer;
             box-shadow: 0 2px 10px rgba(244, 63, 94, 0.3);
-            opacity: 0.8;
+            opacity: 0;
+            pointer-events: none;
             transition: 0.2s;
         }
 
         .msg-bubble:hover .msg-delete-btn {
             opacity: 1;
+            pointer-events: auto;
             transform: scale(1.1);
         }
 
@@ -3222,12 +3224,12 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 gridHtml += `
                     <div class="p-card" onclick="window.location.href='project.html?id=${p.id}'">
                         <div class="p-card-header">
-                            <span class="p-card-id">#${p.id}</span>
+                            <span class="p-card-id">${p.name}</span>
                             <div style="display: flex; gap: 5px; align-items: center;">
                                 <span class="status-pill ${statusClass}">${status.toUpperCase()}</span>
                             </div>
                         </div>
-                        <div class="p-card-name">${p.name}</div>
+                        <div class="p-card-name">#${p.id}</div>
                         <div class="p-card-quota" style="font-size:11px; margin-bottom:10px;">Target Goal: <strong>${p.goal || 0}</strong></div>
                         ${currentUser.role === 'owner' ? `<div style="font-size:11px; color:var(--teal); font-weight:800; margin-bottom:10px;">CPI: $${p.cpi || 0}</div>` : ''}
                         
