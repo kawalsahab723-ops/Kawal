@@ -548,18 +548,27 @@
                 const linksHtml = links.map((l, idx) => {
                     const url = typeof l === 'string' ? l : l.url;
                     const country = typeof l === 'string' ? 'Unknown' : (l.country || 'Global');
+                    const linkPid = typeof l === 'object' && l.pid ? l.pid : null;
+                    
                     const lInts = interviews.filter(i => i.linkIndex == idx);
                     const c = lInts.filter(i => i.outcome === 'Complete').length;
                     const t = lInts.filter(i => i.outcome === 'Terminate').length;
                     const q = lInts.filter(i => i.outcome === 'QuotaFull').length;
                     const s = lInts.filter(i => i.outcome === 'Security Terminate').length;
                     const lIr = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
-                    const trackingUrl = `${window.location.origin}/start?pid=${p.id}&idx=${idx}&uid=[UID]`;
+                    
+                    // Use Specific PID if available, else use Project ID and Index
+                    const finalPid = linkPid || p.id;
+                    const finalIdx = linkPid ? 0 : idx;
+                    const trackingUrl = `${window.location.origin}/start?pid=${finalPid}&idx=${finalIdx}&uid=[UID]`;
 
                     return `
                         <div class="link-card">
                             <div class="link-header">
-                                <div class="country-tag">${getFlagHtml(country)} ${country}</div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div class="country-tag">${getFlagHtml(country)} ${country}</div>
+                                    ${linkPid ? `<div style="font-size: 11px; font-weight: 800; color: var(--teal); background: #f0fdfa; padding: 2px 8px; border-radius: 4px; width: fit-content;">ID: ${linkPid}</div>` : ''}
+                                </div>
                                 <button class="btn btn-outline" onclick="copyToClipboard('${trackingUrl}', this, '${p.id}')">Copy Link</button>
                             </div>
                             <div class="stats-row">

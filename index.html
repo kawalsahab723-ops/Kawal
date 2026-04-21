@@ -2044,7 +2044,8 @@
             div.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center; animation: slideDown 0.2s ease;';
             div.innerHTML = `
                 <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
-                <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.4;" oninput="updateFlagPreview(this)">
+                <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
+                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal);">
                 <input type="url" class="mProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;" oninput="handleLinkInput(this)">
                 <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
             `;
@@ -2100,7 +2101,8 @@
                         <div id="modalLinksContainer">
                             <div class="link-input-group" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                                 <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
-                                <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.4;" oninput="updateFlagPreview(this)">
+                                <input type="text" class="mProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
+                                <input type="text" class="mProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal);">
                                 <input type="url" class="mProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;">
                                 <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
                             </div>
@@ -2133,10 +2135,12 @@
                 e.preventDefault();
                 const linkInputs = document.querySelectorAll('.mProjLinkInput');
                 const countryInputs = document.querySelectorAll('.mProjCountryInput');
+                const pidInputs = document.querySelectorAll('.mProjLinkPidInput');
 
                 const links = Array.from(linkInputs).map((input, idx) => ({
                     url: input.value,
-                    country: countryInputs[idx].value
+                    country: countryInputs[idx].value,
+                    pid: pidInputs[idx].value || null
                 })).filter(l => l.url);
 
                 const project = {
@@ -3200,7 +3204,8 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 if (searchQuery) {
                     const matchesName = p.name.toLowerCase().includes(searchQuery);
                     const matchesId = p.id.toLowerCase().includes(searchQuery);
-                    if (!matchesName && !matchesId) return;
+                    const matchesSubId = (p.links || '').toLowerCase().includes(`"pid":"${searchQuery.replace(/"/g, '')}`);
+                    if (!matchesName && !matchesId && !matchesSubId) return;
                 }
 
                 // Filtering Logic (Status)
