@@ -94,7 +94,9 @@ app.get("/start", async (req, res) => {
 
         if (!targetUrl) return res.status(404).send("<h1>Error</h1><p>Survey link not found.</p>");
 
-        const finalIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+        let finalIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+        if (finalIp.includes(',')) finalIp = finalIp.split(',')[0].trim();
+
         const now = new Date();
         const entryTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
         const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -506,7 +508,8 @@ app.post("/api/save", async (req, res) => {
     const { status, projectId, userId, ip: clientIp } = req.body;
     if (!status || !projectId || !userId) return res.status(400).json({ error: "Missing data" });
 
-    const finalIp = clientIp || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+    let finalIp = clientIp || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+    if (finalIp.includes(',')) finalIp = finalIp.split(',')[0].trim();
     let outcome = 'Complete';
     if (status === 'terminate') outcome = 'Terminate';
     if (status === 'quota') outcome = 'QuotaFull';
