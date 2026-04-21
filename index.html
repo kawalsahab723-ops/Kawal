@@ -3016,7 +3016,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             },
             async updateProjectStatus(id, status) {
                 try {
-                    const res = await fetch(`${API_URL}/projects/${id}`, {
+                    const res = await fetch(`${API_URL}/projects/${encodeURIComponent(id)}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status })
@@ -3027,14 +3027,14 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             },
             async deleteProject(id) {
                 try {
-                    const res = await fetch(`${API_URL}/projects/${id}`, { method: 'DELETE' });
+                    const res = await fetch(`${API_URL}/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
                     if (res.ok) return true;
                 } catch (e) { }
                 return false;
             },
             async getInterviews(projectId) {
                 try {
-                    const url = projectId ? `${API_URL}/interviews?projectId=${projectId}` : `${API_URL}/interviews`;
+                    const url = projectId ? `${API_URL}/interviews?projectId=${encodeURIComponent(projectId)}` : `${API_URL}/interviews`;
                     const res = await fetch(url);
                     if (res.ok) return await res.json();
                 } catch (e) { }
@@ -3254,7 +3254,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                                 <span class="status-pill ${statusClass}">${status.toUpperCase()}</span>
                             </div>
                         </div>
-                        <div class="p-card-name">#${p.id}</div>
+                        <div class="p-card-name">${p.id.startsWith('#') ? p.id : '#' + p.id}</div>
                         <div class="p-card-quota" style="font-size:11px; margin-bottom:10px;">Target Goal: <strong>${p.goal || 0}</strong></div>
                         ${currentUser.role === 'owner' ? `<div style="font-size:11px; color:var(--teal); font-weight:800; margin-bottom:10px;">CPI: $${p.cpi || 0}</div>` : ''}
                         

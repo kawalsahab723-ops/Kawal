@@ -508,8 +508,8 @@
             try {
                 const [pRes, iRes, qRes] = await Promise.all([
                     fetch(`${API_URL}/projects`),
-                    fetch(`${API_URL}/interviews?projectId=${projectId}`),
-                    fetch(`${API_URL}/activities?projectId=${projectId}`)
+                    fetch(`${API_URL}/interviews?projectId=${encodeURIComponent(projectId)}`),
+                    fetch(`${API_URL}/activities?projectId=${encodeURIComponent(projectId)}`)
                 ]);
                 
                 const projects = await pRes.json();
@@ -528,7 +528,7 @@
                 document.getElementById('projectInfo').innerHTML = `
                     <div class="project-header">
                         <span class="project-id" style="border-radius: 6px; padding: 4px 10px;">${p.name}</span>
-                        <h1 class="project-title">#${p.id}</h1>
+                        <h1 class="project-title">${p.id.startsWith('#') ? p.id : '#' + p.id}</h1>
                         <div style="display:flex; align-items:center; gap:20px;">
                             <span class="status-pill ${statusClass}">${(p.status || 'live').toUpperCase()}</span>
                             <span style="font-size:14px; color:#475569;">Target Goal: <strong style="color: #0f172a;">${p.goal || 0}</strong></span>
