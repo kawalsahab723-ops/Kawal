@@ -1923,7 +1923,7 @@
             if (user.role === 'owner') {
                 document.body.classList.add('is-owner');
                 document.body.classList.remove('is-tl');
-            } else if (user.role === 'teamleader') {
+            } else if (user.role === 'teamleader' || user.role === 'tl') {
                 document.body.classList.add('is-tl');
                 document.body.classList.remove('is-owner');
             } else {
@@ -2282,13 +2282,15 @@
 
         function showAddDailyStatusModal() {
             const modalBody = document.getElementById('modalBody');
+            const savedDraft = localStorage.getItem('statusDraft') || '';
+            
             modalBody.innerHTML = `
                 <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 450px; width: 100%;">
                     <h1 style="font-size: 20px; margin-bottom: 20px;">Post Daily Update</h1>
                     <form id="dailyStatusForm">
                         <div class="form-group">
                             <label>What did you work on today?</label>
-                            <textarea id="statusContent" required rows="6" placeholder="Describe your tasks, completes, or any blockers..." style="font-size: 13px; line-height: 1.6;"></textarea>
+                            <textarea id="statusContent" required rows="6" placeholder="Describe your tasks, completes, or any blockers..." style="font-size: 13px; line-height: 1.6;" oninput="localStorage.setItem('statusDraft', this.value)">${savedDraft}</textarea>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
                             <button type="button" class="btn btn-outline" onclick="closeProjectModal()" style="margin: 0;">Cancel</button>
@@ -2312,6 +2314,9 @@
                         timestamp: new Date().toISOString()
                     });
 
+                    // Clear draft on success
+                    localStorage.removeItem('statusDraft');
+                    
                     closeProjectModal();
 
                     // Update only the status components to avoid full dashboard re-render "stutter"
@@ -3268,9 +3273,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         <div class="p-card-actions admin-only-flex" onclick="event.stopPropagation()">
                             <button class="action-btn" style="background:#059669" onclick="changePStatus('${p.id}', 'live')">Live</button>
                             <button class="action-btn" style="background:#f59e0b" onclick="changePStatus('${p.id}', 'hold')">Hold</button>
-                            <button class="action-btn" style="background:#ea580c" onclick="changePStatus('${p.id}', 'pause')">Pause</button>
-                            <button class="action-btn owner-only" style="background:#dc2626; border-radius: 6px; padding: 6px; flex: 1;" onclick="changePStatus('${p.id}', 'closed')">Close</button>
-                            <button class="action-btn owner-only" style="background:#000; color: #fff; margin-top: 5px; width: 100%;" onclick="confirmDeleteProject('${p.id}')">Delete Project</button>
+                            <button class="action-btn admin-only" style="background:#ea580c" onclick="changePStatus('${p.id}', 'pause')">Pause</button>
+                            <button class="action-btn admin-only" style="background:#dc2626; border-radius: 6px; padding: 6px; flex: 1;" onclick="changePStatus('${p.id}', 'closed')">Close</button>
+                            <button class="action-btn admin-only" style="background:#000; color: #fff; margin-top: 5px; width: 100%;" onclick="confirmDeleteProject('${p.id}')">Delete Project</button>
                         </div>
                     </div>
                 `;

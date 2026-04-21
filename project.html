@@ -584,9 +584,13 @@
                 }).join('');
                 document.getElementById('linksContainer').innerHTML = linksHtml || '<div style="padding: 40px; text-align: center; grid-column: 1/-1;">No links added.</div>';
 
+                window.allProjectInterviews = interviews; // Store globally for copy function
                 document.getElementById('specsContainer').innerHTML = `
                     <div class="specs-box">
-                        <div class="specs-title">📝 Project Specifications</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div class="specs-title" style="margin:0;">📝 Project Specifications</div>
+                            <button onclick="copySpecsVertical()" class="btn btn-outline" style="width:auto; padding:5px 12px; font-size:12px; color:var(--teal); border-color:var(--teal);">📋 Copy Quote Vertically</button>
+                        </div>
                         <div style="white-space: pre-line; color: #1e293b; font-size: 15px; line-height: 1.8; font-weight: 500; background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px dashed #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                             ${p.details || 'No instructions provided for this project.'}
                         </div>
@@ -612,6 +616,24 @@
                 btn.innerText = "COPIED!";
                 setTimeout(() => btn.innerText = originalText, 2000);
             });
+        }
+
+        function copySpecsVertical() {
+            if (!currentProject) return;
+            const p = currentProject;
+            // Get overall stats from the UI or current state
+            // Re-calculating for total accuracy
+            const interviews = window.allProjectInterviews || [];
+            const c = interviews.filter(i => i.outcome === 'Complete').length;
+            const t = interviews.filter(i => i.outcome === 'Terminate').length;
+            const q = interviews.filter(i => i.outcome === 'QuotaFull').length;
+            const s = interviews.filter(i => i.outcome === 'Security Terminate').length;
+            const ir = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
+
+            const text = `${p.id} ${p.name}\nComp: ${c}\nTerm: ${t}\nQF: ${q}\nSTer: ${s}\nIR: ${ir}%\n\nInstructions:\n${p.details || 'None'}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Project details copied vertically!");
+            }).catch(err => console.error(err));
         }
 
         loadDetails();
