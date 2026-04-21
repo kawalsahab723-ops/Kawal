@@ -61,16 +61,11 @@ app.get("/", (req, res) => {
     }
 });
 
-// Catch-all route for SPA (Redirects unknown paths to index.html)
-app.get("*", (req, res, next) => {
-    // If it's an API request, let it continue (it will 404 later if no route)
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/start')) {
-        return next();
-    }
-    res.sendFile(path.resolve(__dirname, "index.html"));
-});
+// 3. STATIC FILES
+app.use(express.static(path.resolve(__dirname)));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
 
-// 5. RESPONDENT ENTRY LINK
+// 5. RESPONDENT ENTRY LINK (Start Survey)
 app.get("/start", async (req, res) => {
     const { pid, uid, idx } = req.query;
     if (!pid || !uid) return res.status(400).send("<h1>Missing Parameters</h1><p>Project ID (pid) and Respondent UID (uid) are required.</p>");
@@ -101,7 +96,6 @@ app.get("/start", async (req, res) => {
         const entryTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
         const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-        // Upsert Interview record for entry tracking
         await Interview.findOneAndUpdate(
             { projectId: pid, respId: uid },
             { 
@@ -110,7 +104,6 @@ app.get("/start", async (req, res) => {
             { upsert: true }
         );
 
-        // Update Project clicks
         await Project.updateOne({ id: pid }, { $inc: { clicks: 1 } });
 
         targetUrl = targetUrl.trim();
@@ -118,14 +111,10 @@ app.get("/start", async (req, res) => {
             targetUrl = 'https://' + targetUrl;
         }
 
-        // Replace UID placeholders if present
         let finalUrl = targetUrl.replace(/\[UID\]/gi, uid).replace(/\[ID\]/gi, uid);
-
-        // Fallback 1: If original URL ends with an equals sign (e.g. TOID=)
         if (finalUrl === targetUrl && finalUrl.endsWith('=')) {
             finalUrl += uid;
         } 
-        // Fallback 2: If no placeholder was replaced and no trailing =, append it
         else if (finalUrl === targetUrl && !finalUrl.includes(uid)) {
             const separator = finalUrl.includes('?') ? '&' : '?';
             finalUrl += `${separator}uid=${uid}`;
@@ -134,6 +123,66 @@ app.get("/start", async (req, res) => {
         res.redirect(finalUrl);
     } catch (err) {
         res.status(500).send("Server Error: " + err.message);
+    }
+});
+
+// 6. SURVEY REDIRECT (Ending Page with server-side Auto-Punch)
+// This supports multiple shortcuts: /en, /complete, /terminate, /quota, /security
+app.get(["/en", "/en/", "/complete", "/terminate", "/quota", "/security", "/redirect"], async (req, res) => {
+    const { pid, uid, status, S, uid2 } = req.query;
+    
+    // Automatically determine status from the endpoint name if S or status param is missing
+    let rawStatus = (status || S || "complete").toLowerCase();
+    const endpoint = req.path.split('/')[1].toLowerCase();
+    if (!status && !S) {
+        if (endpoint === 'terminate') rawStatus = 'terminate';
+        else if (endpoint === 'quota') rawStatus = 'quota';
+        else if (endpoint === 'security') rawStatus = 'security';
+        else if (endpoint === 'complete') rawStatus = 'complete';
+    }
+
+    const respondentId = uid || uid2; 
+
+    // Server-side Auto-Punch (Ensures data is saved even if browser closes)
+    if (pid && respondentId) {
+        let outcome = 'Complete';
+        if (rawStatus.startsWith('t')) outcome = 'Terminate';
+        else if (rawStatus.startsWith('q')) outcome = 'QuotaFull';
+        else if (rawStatus.startsWith('s')) outcome = 'Security Terminate';
+
+        try {
+            let finalIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+            if (finalIp.includes(',')) finalIp = finalIp.split(',')[0].trim();
+
+            const now = new Date();
+            const exitTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
+            const timestamp = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+            await Interview.findOneAndUpdate(
+                { projectId: pid, respId: respondentId },
+                { outcome, exitTime, exitIp: finalIp, ip: finalIp, timestamp },
+                { upsert: true }
+            );
+
+            let col = "";
+            if (outcome === 'Complete') col = "completes";
+            else if (outcome === 'Terminate') col = "terminates";
+            else if (outcome === 'QuotaFull') col = "quotafulls";
+            else if (outcome === 'Security Terminate') col = "securities";
+            
+            if (col) {
+                await Project.updateOne({ id: pid }, { $inc: { [col]: 1 } });
+            }
+        } catch (e) {
+            console.error("❌ Auto-punch failed:", e);
+        }
+    }
+
+    const redirectPath = path.resolve(__dirname, "redirect.html");
+    if (fs.existsSync(redirectPath)) {
+        res.sendFile(redirectPath);
+    } else {
+        res.status(404).send("redirect.html not found.");
     }
 });
 
@@ -720,6 +769,18 @@ app.delete("/api/attendance/monthly", async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// 7. CATCH-ALL (MUST BE LAST)
+// Redirects unknown paths to index.html (SPA support)
+app.get("*", (req, res) => {
+    // Exclude API, uploads, and specific landing pages from catch-all
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/start') || 
+        req.path.startsWith('/en') || req.path.startsWith('/complete') || req.path.startsWith('/terminate') || 
+        req.path.startsWith('/quota') || req.path.startsWith('/security') || req.path.includes('.html')) {
+        return res.status(404).send("File not found.");
+    }
+    res.sendFile(path.resolve(__dirname, "index.html"));
 });
 
 // Prevent server from crashing on unhandled errors
