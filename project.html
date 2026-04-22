@@ -655,11 +655,6 @@
                     const s = lInts.filter(i => i.outcome === 'Security Terminate').length;
                     const lIr = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
                     
-                    // Use Specific PID if available, else use Project ID and Index
-                    const finalPid = linkPid || p.id;
-                    const finalIdx = linkPid ? 0 : idx;
-                    const trackingUrl = `${window.location.origin}/start?pid=${finalPid}${finalIdx > 0 ? '&idx=' + finalIdx : ''}&uid=[UID]`;
-
                     return `
                         <div class="link-card">
                             <div class="link-header">
@@ -667,7 +662,7 @@
                                     <div class="country-tag">${getFlagHtml(country)} ${country}</div>
                                     ${linkPid ? `<div style="font-size: 13px; font-weight: 800; color: var(--teal); background: #f0fdfa; padding: 4px 10px; border-radius: 8px; border: 1px dashed var(--teal);">ID: ${linkPid}</div>` : ''}
                                 </div>
-                                <button class="btn btn-outline" onclick="copyToClipboard('${trackingUrl}', this, '${p.id}')">Copy Link</button>
+                                <button class="btn btn-outline" onclick="copyToClipboard('${url}', this, '${p.id}')">Copy Link</button>
                             </div>
                             <div class="stats-row">
                                 <div class="stat-item"><span class="stat-val" style="color:#059669">${c}</span><span class="stat-lbl">Comp</span></div>
@@ -676,7 +671,7 @@
                                 <div class="stat-item" title="Incidence Rate"><span class="stat-val" style="color:#6366f1">${lIr}%</span><span class="stat-lbl">IR</span></div>
                                 <div class="stat-item"><span class="stat-val" style="color:#94a3b8">${s}</span><span class="stat-lbl">STer</span></div>
                             </div>
-                            <div class="url-box">${trackingUrl}</div>
+                            <div class="url-box" style="font-size: 10px; opacity: 0.8;">${url}</div>
                         </div>
                     `;
                 }).join('');
@@ -710,6 +705,9 @@
 
         function copyToClipboard(text, btn, projectId) {
             navigator.clipboard.writeText(text).then(() => {
+                if (projectId) {
+                    fetch(`${API_URL}/projects/${projectId}/click`, { method: 'POST' }).catch(e => {});
+                }
                 const originalText = btn.innerText;
                 btn.innerText = "COPIED!";
                 setTimeout(() => btn.innerText = originalText, 2000);

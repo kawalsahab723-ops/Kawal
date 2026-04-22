@@ -2092,22 +2092,6 @@
             // Disabled auto-append as per user request
         }
 
-        async function saveRedirectSetting() {
-            const val = document.getElementById('mBaseRedirect').value;
-            if (!val) return;
-            try {
-                const res = await fetch(`${API_URL}/settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: 'base_redirect', value: val })
-                });
-                if (res.ok) {
-                    alert("Redirect Link Saved Successfully!");
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
 
         function checkMultiPid(input) {
             const val = input.value || '';
@@ -2153,22 +2137,10 @@
         }
 
         async function showNewProjectModal() {
-            const setRes = await fetch(`${API_URL}/settings`);
-            const settings = await setRes.json();
-            const baseRedirect = settings.base_redirect || 'http://datatrovics.com/redirect.html';
-
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = `
             <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 500px; width: 100%;">
-                <h1 style="font-size: 20px; margin-bottom: 5px;">Create New Survey Project</h1>
-                <div style="background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid var(--primary); font-size: 11px; color: #475569;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <strong>🔗 Master Redirect:</strong>
-                        <button type="button" class="btn btn-outline" onclick="saveRedirectSetting()" style="width: auto; padding: 2px 8px; font-size: 10px; margin: 0; background: white; border-color: #cbd5e1;">Save Link</button>
-                    </div>
-                    <input type="text" id="mBaseRedirect" value="${baseRedirect}" style="width: 100%; border: 1px solid #cbd5e1; padding: 5px; border-radius: 4px; font-family: monospace; font-size: 10px; background: white; color: #334155;">
-                    <div style="margin-top: 5px; opacity: 0.7; font-size: 9px;">?pid=<span style="color:var(--primary)">{ProjectID}</span>&rid={RespondentID}</div>
-                </div>
+                <h1 style="font-size: 20px; margin-bottom: 20px;">Create New Survey Project</h1>
                 <form id="newProjectModalForm">
                     <div class="form-group">
                         <label>Project ID (Unique Code)</label>
