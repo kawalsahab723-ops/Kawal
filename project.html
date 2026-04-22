@@ -931,7 +931,7 @@
                 };
 
                 try {
-                    const res = await fetch(\`\${API_URL}/projects/\${encodeURIComponent(p.id)}\`, {
+                    const res = await fetch(`${API_URL}/projects/${encodeURIComponent(p.id)}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updateData)
