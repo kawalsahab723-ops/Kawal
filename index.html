@@ -1355,6 +1355,58 @@
         .is-owner .admin-only-flex {
             display: flex;
         }
+        /* Project Specs Toggle styles */
+        .specs-content-wrapper {
+            position: relative;
+            transition: all 0.3s ease;
+            max-height: none;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #475569;
+            margin-top: 10px;
+            white-space: pre-line;
+        }
+
+        .specs-content-wrapper.collapsed {
+            max-height: 60px; /* Shorter for dashboard cards */
+            overflow: hidden;
+        }
+
+        .specs-content-wrapper.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(transparent, rgba(248, 250, 252, 0.9));
+            pointer-events: none;
+        }
+
+        .specs-toggle-btn {
+            display: block;
+            width: 100%;
+            padding: 4px;
+            text-align: center;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: var(--teal);
+            font-weight: 800;
+            font-size: 10px;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+
+        .specs-toggle-btn:hover {
+            background: #e2e8f0;
+            color: var(--teal-dark);
+        }
     </style>
 </head>
 
@@ -2264,6 +2316,7 @@
         }
 
         function showAddActivityModal() {
+            window.pastedActivityFile = null; // Reset
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = `
                 <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 450px; width: 100%;">
@@ -2275,10 +2328,14 @@
                         </div>
                         <div class="form-group">
                             <label>Message / Update</label>
-                            <textarea id="mActContent" required rows="4" placeholder="What's the update?"></textarea>
+                            <textarea id="mActContent" required rows="4" placeholder="What's the update? (Paste image here)"></textarea>
                         </div>
                         <div class="form-group">
                             <label>Attach Photo (Optional)</label>
+                            <div id="pastedPreview" style="display: none; margin-bottom: 10px; position: relative;">
+                                <img id="pastedImgTag" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 150px; object-fit: cover;">
+                                <button type="button" onclick="removePastedImage()" style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center;">×</button>
+                            </div>
                             <input type="file" id="mActImage" accept="image/*" style="border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; width: 100%;">
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -2290,6 +2347,27 @@
             `;
             document.getElementById('projectModal').style.display = 'flex';
 
+            // Paste Handler
+            const textarea = document.getElementById('mActContent');
+            textarea.addEventListener('paste', (e) => {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        const file = item.getAsFile();
+                        window.pastedActivityFile = file;
+                        
+                        // Show Preview
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            document.getElementById('pastedImgTag').src = event.target.result;
+                            document.getElementById('pastedPreview').style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                        break;
+                    }
+                }
+            });
+
             document.getElementById('modalActivityForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('mActSubmit');
@@ -2299,9 +2377,12 @@
                 const formData = new FormData();
                 formData.append('projectId', document.getElementById('mActProjectId').value);
                 formData.append('content', document.getElementById('mActContent').value);
+                
                 const fileInput = document.getElementById('mActImage');
                 if (fileInput.files[0]) {
                     formData.append('image', fileInput.files[0]);
+                } else if (window.pastedActivityFile) {
+                    formData.append('image', window.pastedActivityFile, 'pasted_image.png');
                 }
 
                 try {
@@ -3152,6 +3233,28 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             }
         };
 
+        function toggleProjectSpecs(id, event) {
+            if (event) event.stopPropagation();
+            const wrapper = document.getElementById(`specsWrapper-${id}`);
+            const btn = document.getElementById(`specsBtn-${id}`);
+            if (wrapper.classList.contains('collapsed')) {
+                wrapper.classList.remove('collapsed');
+                btn.innerText = 'Show Less ↑';
+            } else {
+                wrapper.classList.add('collapsed');
+                btn.innerText = 'Show More ↓';
+            }
+        }
+
+        window.pastedActivityFile = null;
+        function removePastedImage() {
+            window.pastedActivityFile = null;
+            const preview = document.getElementById('pastedPreview');
+            if (preview) preview.style.display = 'none';
+        }
+
+
+
         async function loadActivities() {
             try {
                 const res = await fetch(`${API_URL}/activities`);
@@ -3308,6 +3411,12 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         <div class="p-card-quota" style="font-size:11px; margin-bottom:10px;">Target Goal: <strong>${p.goal || 0}</strong></div>
                         ${currentUser.role === 'owner' ? `<div style="font-size:11px; color:var(--teal); font-weight:800; margin-bottom:10px;">CPI: $${p.cpi || 0}</div>` : ''}
                         
+                        <!-- Specifications with Toggle -->
+                        <div id="specsWrapper-${p.id}" class="specs-content-wrapper ${p.details && p.details.length > 100 ? 'collapsed' : ''}" onclick="event.stopPropagation()">
+                            ${p.details || 'No specifications provided.'}
+                        </div>
+                        ${p.details && p.details.length > 100 ? `<button id="specsBtn-${p.id}" class="specs-toggle-btn" onclick="toggleProjectSpecs('${p.id}', event)">Show More ↓</button>` : ''}
+
                         <div class="p-card-stats" style="grid-template-columns: repeat(5, 1fr);">
                             <div class="p-stat-item"><span class="p-stat-val" style="color:#059669">${comps}</span><span class="p-stat-lbl">COMP</span></div>
                             <div class="p-stat-item"><span class="p-stat-val" style="color:#f59e0b">${terms}</span><span class="p-stat-lbl">TERM</span></div>

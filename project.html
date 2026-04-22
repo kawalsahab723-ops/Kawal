@@ -726,7 +726,7 @@
                             <div class="specs-title" style="margin:0;">📝 Project Specifications</div>
                             <button onclick="copySpecsVertical()" class="btn btn-outline" style="width:auto; padding:5px 12px; font-size:12px; color:var(--teal); border-color:var(--teal);">📋 Copy Quote Vertically</button>
                         </div>
-                        <div id="specsWrapper" class="specs-content-wrapper collapsed" style="white-space: pre-line; color: #1e293b; font-size: 15px; line-height: 1.8; font-weight: 500; background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px dashed #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                        <div id="specsWrapper" class="specs-content-wrapper ${p.details && p.details.length > 300 ? 'collapsed' : ''}" style="white-space: pre-line; color: #1e293b; font-size: 15px; line-height: 1.8; font-weight: 500; background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px dashed #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                             ${p.details || 'No instructions provided for this project.'}
                         </div>
                         ${p.details && p.details.length > 300 ? `<button id="specsToggleBtn" onclick="toggleSpecs()" class="specs-toggle-btn">Show More ↓</button>` : ''}
@@ -739,6 +739,11 @@
                         <div>
                             <div style="font-size: 11px; font-weight:700; color: #94a3b8;">${a.timestamp}</div>
                             <div style="font-size: 14px; margin-top: 4px;">${a.content}</div>
+                            ${a.image ? `
+                                <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; max-width: 300px;">
+                                    <img src="${a.image}" style="width: 100%; display: block; cursor: pointer;" onclick="window.open('${a.image}', '_blank')">
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `).join('') : '<div style="padding:40px; text-align:center; color:#94a3b8;">No activities.</div>';
