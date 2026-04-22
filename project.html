@@ -1040,6 +1040,49 @@
         }
 
         loadDetails();
+
+        // PC Notification Logic for Project Page
+        let notifiedMessages = new Set(JSON.parse(localStorage.getItem('notifiedMessages') || '[]'));
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+
+        async function checkMessageNotifications() {
+            const userStr = localStorage.getItem('opsUser');
+            if (!userStr) return;
+            const currentUser = JSON.parse(userStr);
+            try {
+                const res = await fetch(`${API_URL}/messages/all-for-user?username=${currentUser.username}`);
+                if (!res.ok) return;
+                const msgs = await res.json();
+                
+                let hasNew = false;
+                msgs.forEach(m => {
+                    if (m.sender !== currentUser.username) {
+                        if (!notifiedMessages.has(m._id)) {
+                            notifiedMessages.add(m._id);
+                            hasNew = true;
+                            
+                            const title = `New Message from ${m.sender}`;
+                            if ("Notification" in window && Notification.permission === "granted") {
+                                new Notification(title, {
+                                    body: m.content,
+                                    icon: 'https://cdn-icons-png.flaticon.com/512/733/733585.png'
+                                });
+                            }
+                        }
+                    }
+                });
+
+                if (hasNew) {
+                    const arr = Array.from(notifiedMessages).slice(-100);
+                    notifiedMessages = new Set(arr);
+                    localStorage.setItem('notifiedMessages', JSON.stringify(arr));
+                }
+            } catch (e) {}
+        }
+        setInterval(checkMessageNotifications, 5000);
+
     </script>
 </body>
 </html>

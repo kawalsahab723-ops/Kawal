@@ -2700,7 +2700,24 @@
         let lastKnownMsgId = localStorage.getItem('lastMsgId') || '0';
         let notifiedMessages = new Set(JSON.parse(localStorage.getItem('notifiedMessages') || '[]'));
 
+        // Request PC Notification permission
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+
         function showNotificationPopup(msg) {
+            const contentSnippet = msg.content.length > 30 ? msg.content.substring(0, 30) + '...' : msg.content;
+            const title = `New Message from ${msg.sender}`;
+            
+            // OS-Level Desktop Notification
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, {
+                    body: msg.content,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/733/733585.png' // Placeholder chat icon
+                });
+            }
+
+            // In-page Toast Notification
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed; top: 20px; right: 20px; z-index: 10000;
