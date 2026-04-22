@@ -1905,7 +1905,9 @@
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('appMain').style.display = 'flex';
             document.getElementById('userNameDisplay').innerText = name;
-            const roleLabel = user.role === 'teamleader' ? 'Team Leader' : (user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User');
+            const roleLabel = (user.role === 'owner' || user.role === 'admin') ? 'Admin' : 
+                             ((user.role === 'teamleader' || user.role === 'tl') ? 'Team Leader' : 
+                             (user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User'));
             document.getElementById('userRoleDisplay').innerText = roleLabel;
             document.getElementById('userInitial').innerText = name[0].toUpperCase();
 
@@ -1920,7 +1922,7 @@
                 }
             }).catch(e => console.error(e));
 
-            if (user.role === 'owner') {
+            if (user.role === 'owner' || user.role === 'admin') {
                 document.body.classList.add('is-owner');
                 document.body.classList.remove('is-tl');
             } else if (user.role === 'teamleader' || user.role === 'tl') {
