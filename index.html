@@ -3810,6 +3810,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 }
 
                 const records = await statusRes.json();
+                window.monthlyStatusRecords = records; // Store for detail view
 
                 const statusMap = {}; // Map[username][day] = { sum: 0, count: 0 }
                 records.forEach(r => {
@@ -3864,7 +3865,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                                     <div style="font-size: 9px; color: #94a3b8;">(${dayData.count})</div>`;
                         }
 
-                        cells += `<td style="background: ${bgColor}; text-align: center; border-left: 1px solid #f1f5f9; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">${text}</td>`;
+                        cells += `<td onclick="viewDayStatusDetails('${u.username}', '${dateStr}')" style="background: ${bgColor}; text-align: center; border-left: 1px solid #f1f5f9; padding: 8px 0; border-bottom: 1px solid #f1f5f9; cursor: ${dayData.count > 0 ? 'pointer' : 'default'};">${text}</td>`;
                     }
 
                     bodyHtml += `
@@ -3886,6 +3887,52 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 const table = document.getElementById('monthlyStatusReportTable');
                 if (table) table.innerHTML = `<tr><td colspan="35" style="text-align:center; padding:50px; color:red;">Failed to load report. Please check if server is running.</td></tr>`;
             }
+        }
+
+        async function viewDayStatusDetails(username, dateStr) {
+            const role = currentUser ? currentUser.role : '';
+            if (role !== 'owner' && role !== 'admin' && role !== 'teamleader' && role !== 'tl') return;
+
+            const records = (window.monthlyStatusRecords || []).filter(r => 
+                r.username === username && (r.timestamp || '').startsWith(dateStr)
+            );
+
+            if (records.length === 0) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const dateObj = new Date(dateStr);
+            const formattedDate = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            modalBody.innerHTML = `
+                <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 600px; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">
+                        <div>
+                            <h1 style="font-size: 20px; margin: 0; color: var(--teal);">${username}'s Status</h1>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 5px 0 0;">${formattedDate}</p>
+                        </div>
+                        <div style="background: #eff6ff; color: var(--primary); padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800;">
+                            ${records.length} Updates
+                        </div>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px;">
+                        ${records.map(r => {
+                            const time = new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            return `
+                                <div style="padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="font-size: 11px; font-weight: 800; color: #64748b;">Posted at ${time}</span>
+                                    </div>
+                                    <div style="font-size: 14px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${r.content}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button class="btn btn-primary" onclick="closeProjectModal()" style="width: auto; padding: 8px 25px;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('projectModal').style.display = 'flex';
         }
 
         async function loadMonthlyAttendance() {
