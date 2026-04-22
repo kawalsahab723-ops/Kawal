@@ -599,8 +599,21 @@ app.get("/api/daily-status", async (req, res) => {
 
 app.get("/api/daily-status/monthly", async (req, res) => {
     const { month } = req.query; // YYYY-MM
-    const statuses = await DailyStatus.find({ timestamp: { $regex: new RegExp(`^${month}`) } });
-    res.json(statuses);
+    if (!month) return res.json([]);
+    try {
+        const [year, monthVal] = month.split('-').map(Number);
+        // Fetch from 1st of current month to 2nd of next month 
+        // to cover the 1-day shift (e.g. May 1st status belongs to April 30th)
+        const start = new Date(Date.UTC(year, monthVal - 1, 1)).toISOString();
+        const end = new Date(Date.UTC(year, monthVal, 2)).toISOString();
+        
+        const statuses = await DailyStatus.find({
+            timestamp: { $gte: start, $lt: end }
+        });
+        res.json(statuses);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post("/api/daily-status", async (req, res) => {

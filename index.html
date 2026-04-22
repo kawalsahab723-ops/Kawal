@@ -3783,12 +3783,24 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     allUsers = allUsers.filter(u => u.username.toLowerCase().includes(searchQuery));
                 }
 
-                const records = await statusRes.json();
+                const rawRecords = await statusRes.json();
+                
+                // Shift dates back by 1 day for report purposes as requested
+                // (Status on 22nd shows on 21st)
+                const records = rawRecords.map(r => {
+                    const d = new Date(r.timestamp);
+                    d.setDate(d.getDate() - 1);
+                    return { 
+                        ...r, 
+                        displayDate: d.toISOString().substring(0, 10) 
+                    };
+                });
+                
                 window.monthlyStatusRecords = records; // Store for detail view
 
                 const statusMap = {}; // Map[username][day] = { sum: 0, count: 0 }
                 records.forEach(r => {
-                    const datePart = (r.timestamp || '').substring(0, 10);
+                    const datePart = r.displayDate;
                     if (!statusMap[r.username]) statusMap[r.username] = {};
                     if (!statusMap[r.username][datePart]) statusMap[r.username][datePart] = { sum: 0, count: 0 };
 
@@ -3868,7 +3880,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             if (role !== 'owner' && role !== 'admin' && role !== 'teamleader' && role !== 'tl') return;
 
             const records = (window.monthlyStatusRecords || []).filter(r => 
-                r.username === username && (r.timestamp || '').startsWith(dateStr)
+                r.username === username && r.displayDate === dateStr
             );
 
             if (records.length === 0) return;
