@@ -3415,6 +3415,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                             <button class="action-btn" style="background:#f59e0b" onclick="changePStatus('${p.id}', 'hold')">Hold</button>
                             <button class="action-btn admin-only" style="background:#ea580c" onclick="changePStatus('${p.id}', 'pause')">Pause</button>
                             <button class="action-btn admin-only" style="background:#dc2626; border-radius: 6px; padding: 6px; flex: 1;" onclick="changePStatus('${p.id}', 'closed')">Close</button>
+                            <button class="action-btn admin-only" style="background:var(--teal); color: #fff; margin-top: 5px; width: 100%;" onclick="window.location.href='project.html?id=${encodeURIComponent(p.id)}'">Edit Project</button>
                             <button class="action-btn admin-only" style="background:#000; color: #fff; margin-top: 5px; width: 100%;" onclick="confirmDeleteProject('${p.id}')">Delete Project</button>
                         </div>
                     </div>

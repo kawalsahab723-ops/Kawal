@@ -665,10 +665,17 @@
 
                 // Header
                 const statusClass = `status-${p.status || 'live'}`;
+                const isAdminOrOwner = user.role === 'owner' || user.role === 'admin' || user.role === 'teamleader';
+
                 document.getElementById('projectInfo').innerHTML = `
                     <div class="project-header">
-                        <span class="project-id" style="border-radius: 6px; padding: 4px 10px;">${p.name}</span>
-                        <h1 class="project-title">${p.id.startsWith('#') ? p.id : '#' + p.id}</h1>
+                        <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                            <div>
+                                <span class="project-id" style="border-radius: 6px; padding: 4px 10px;">${p.name}</span>
+                                <h1 class="project-title">${p.id.startsWith('#') ? p.id : '#' + p.id}</h1>
+                            </div>
+                            ${isAdminOrOwner ? `<button class="btn btn-outline" onclick="showEditProjectModal()" style="font-size: 12px;">✏️ Edit Project</button>` : ''}
+                        </div>
                         <div style="display:flex; align-items:center; gap:20px;">
                             <span class="status-pill ${statusClass}">${(p.status || 'live').toUpperCase()}</span>
                             <span style="font-size:14px; color:#475569;">Target Goal: <strong style="color: #0f172a;">${p.goal || 0}</strong></span>
@@ -792,6 +799,154 @@
             navigator.clipboard.writeText(text).then(() => {
                 alert("Project details copied vertically!");
             }).catch(err => console.error(err));
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').style.display = 'none';
+        }
+
+        function addLinkFieldEdit() {
+            const container = document.getElementById('modalLinksContainerEdit');
+            const mainId = document.getElementById('eProjId');
+            const isMulti = mainId && (mainId.value.includes(' - ') || mainId.value.includes('/') || mainId.value.includes('&'));
+
+            const div = document.createElement('div');
+            div.className = 'link-input-group';
+            div.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center; animation: slideDown 0.2s ease;';
+            div.innerHTML = `
+                <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
+                <input type="text" class="eProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
+                <input type="text" class="eProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal); display: ${isMulti ? 'block' : 'none'};">
+                <input type="url" class="eProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;">
+                <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function checkMultiPidEdit(input) {
+            const val = input.value || '';
+            const isMulti = val.includes(' - ') || val.includes('/') || val.includes('&') || (val.includes(' ') && val.trim().split(/\\s+/).length > 1 && !val.includes('-'));
+            document.querySelectorAll('.eProjLinkPidInput').forEach(el => {
+                el.style.display = isMulti ? 'block' : 'none';
+            });
+        }
+
+        function showEditProjectModal() {
+            if (!currentProject) return;
+            const p = currentProject;
+            let links = [];
+            try { links = typeof p.links === 'string' ? JSON.parse(p.links || '[]') : (p.links || []); } catch(e) {}
+            
+            const isMulti = p.id.includes(' - ') || p.id.includes('/') || p.id.includes('&');
+            
+            let linksHtml = '';
+            if (links.length === 0) {
+                linksHtml = `
+                    <div class="link-input-group" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                        <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">🌐</span>
+                        <input type="text" class="eProjCountryInput" required placeholder="Country" style="flex: 0.3;" oninput="updateFlagPreview(this)">
+                        <input type="text" class="eProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal); display: ${isMulti ? 'block' : 'none'};">
+                        <input type="url" class="eProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;">
+                        <button type="button" onclick="if(document.querySelectorAll('.link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
+                    </div>
+                `;
+            } else {
+                linksHtml = links.map(l => {
+                    const country = typeof l === 'string' ? '' : (l.country || '');
+                    const url = typeof l === 'string' ? l : (l.url || '');
+                    const pid = typeof l === 'object' && l.pid ? l.pid : '';
+                    return `
+                        <div class="link-input-group" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                            <span class="flag-preview" style="display: flex; align-items: center; justify-content: center; min-width: 40px;">${getFlagHtml(country)}</span>
+                            <input type="text" class="eProjCountryInput" required placeholder="Country" style="flex: 0.3;" value="${country}" oninput="updateFlagPreview(this)">
+                            <input type="text" class="eProjLinkPidInput" placeholder="Specific PID (Opt)" style="flex: 0.3; border: 1px dashed var(--teal); display: ${isMulti ? 'block' : 'none'};" value="${pid}">
+                            <input type="url" class="eProjLinkInput" required placeholder="https://survey.link/..." style="flex: 1;" value="${url}">
+                            <button type="button" onclick="if(document.querySelectorAll('#modalLinksContainerEdit .link-input-group').length > 1) this.parentElement.remove()" class="btn btn-outline" style="width: auto; margin: 0; padding: 5px 10px; color: var(--error); font-weight: bold;">×</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+            <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                <h1 style="font-size: 20px; margin-bottom: 20px;">Edit Survey Project</h1>
+                <form id="editProjectForm">
+                    <div class="form-group">
+                        <label>Project ID</label>
+                        <input type="text" id="eProjId" value="${p.id}" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="eProjName" required value="${p.name}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Survey Links & Countries</label>
+                        <div id="modalLinksContainerEdit">
+                            ${linksHtml}
+                        </div>
+                        <button type="button" class="btn btn-outline" onclick="addLinkFieldEdit()" style="font-size: 11px; padding: 8px; margin-top: 5px; font-weight: 600;">+ Add Another Link/Country</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Survey Quota (Target Goal)</label>
+                        <input type="number" id="eProjGoal" min="1" required value="${p.goal}">
+                    </div>
+                    <div class="form-group">
+                        <label>Project CPI</label>
+                        <input type="number" step="0.01" id="eProjCPI" value="${p.cpi || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Specifications / Instructions</label>
+                        <textarea id="eProjDetails" rows="4">${p.details || ''}</textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-outline" onclick="closeProjectModal()" style="margin: 0;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="margin: 0;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+            `;
+            document.getElementById('projectModal').style.display = 'flex';
+
+            document.getElementById('editProjectForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const linkInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjLinkInput');
+                const countryInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjCountryInput');
+                const pidInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjLinkPidInput');
+
+                const newLinks = Array.from(linkInputs).map((input, idx) => ({
+                    url: input.value,
+                    country: countryInputs[idx].value,
+                    pid: pidInputs[idx].value || null
+                })).filter(l => l.url);
+
+                const updateData = {
+                    name: document.getElementById('eProjName').value,
+                    links: newLinks,
+                    goal: parseInt(document.getElementById('eProjGoal').value),
+                    cpi: parseFloat(document.getElementById('eProjCPI').value || 0),
+                    details: document.getElementById('eProjDetails').value
+                };
+
+                try {
+                    const res = await fetch(\`\${API_URL}/projects/\${encodeURIComponent(p.id)}\`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+                    if (res.ok) {
+                        closeProjectModal();
+                        loadDetails();
+                    } else {
+                        alert('Failed to update project.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Error updating project.');
+                }
+            });
         }
 
         loadDetails();
