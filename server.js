@@ -265,10 +265,13 @@ mongoose.connect(MONGODB_URI, {
 });
 
 async function seedUsers() {
+    // Remove default admin user as requested
+    await User.deleteOne({ username: "admin" });
+
     const defaultUsers = [
-        { username: "admin", password: "admin123", role: "owner" },
         { username: "kawal", password: "kawal123", role: "employee" },
         { username: "Ram", password: "ram123", role: "owner" },
+        { username: "anish", password: "anish123", role: "owner" },
         { username: "Amit", password: "amit123", role: "teamleader" },
         { username: "Pratham", password: "pratham123", role: "teamleader" },
         { username: "Anshul", password: "anshul123", role: "teamleader" },
@@ -281,6 +284,10 @@ async function seedUsers() {
         if (!exists) {
             await User.create(u);
             console.log(`👤 Seeded user: ${u.username}`);
+        } else if (u.username === 'anish' && exists.role !== 'owner') {
+            exists.role = 'owner';
+            await exists.save();
+            console.log(`🆙 Updated anish to owner`);
         }
     }
 }
