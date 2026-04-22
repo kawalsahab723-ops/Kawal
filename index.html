@@ -3233,19 +3233,6 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             }
         };
 
-        function toggleProjectSpecs(id, event) {
-            if (event) event.stopPropagation();
-            const wrapper = document.getElementById(`specsWrapper-${id}`);
-            const btn = document.getElementById(`specsBtn-${id}`);
-            if (wrapper.classList.contains('collapsed')) {
-                wrapper.classList.remove('collapsed');
-                btn.innerText = 'Show Less ↑';
-            } else {
-                wrapper.classList.add('collapsed');
-                btn.innerText = 'Show More ↓';
-            }
-        }
-
         window.pastedActivityFile = null;
         function removePastedImage() {
             window.pastedActivityFile = null;
@@ -3411,12 +3398,6 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         <div class="p-card-quota" style="font-size:11px; margin-bottom:10px;">Target Goal: <strong>${p.goal || 0}</strong></div>
                         ${currentUser.role === 'owner' ? `<div style="font-size:11px; color:var(--teal); font-weight:800; margin-bottom:10px;">CPI: $${p.cpi || 0}</div>` : ''}
                         
-                        <!-- Specifications with Toggle -->
-                        <div id="specsWrapper-${p.id}" class="specs-content-wrapper ${p.details && p.details.length > 100 ? 'collapsed' : ''}" onclick="event.stopPropagation()">
-                            ${p.details || 'No specifications provided.'}
-                        </div>
-                        ${p.details && p.details.length > 100 ? `<button id="specsBtn-${p.id}" class="specs-toggle-btn" onclick="toggleProjectSpecs('${p.id}', event)">Show More ↓</button>` : ''}
-
                         <div class="p-card-stats" style="grid-template-columns: repeat(5, 1fr);">
                             <div class="p-stat-item"><span class="p-stat-val" style="color:#059669">${comps}</span><span class="p-stat-lbl">COMP</span></div>
                             <div class="p-stat-item"><span class="p-stat-val" style="color:#f59e0b">${terms}</span><span class="p-stat-lbl">TERM</span></div>
