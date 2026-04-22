@@ -3820,11 +3820,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     // Count this as one entry
                     statusMap[r.username][datePart].count += 1;
 
-                    // Extract standalone numbers (ignore dates like 20/04/2026)
-                    // We look for numbers that aren't preceded/followed by / or -
-                    const contentValues = (r.content || '').replace(/\d{1,4}[/-]\d{1,2}[/-]\d{2,4}/g, ''); // Remove date-like strings
-                    const numbers = contentValues.match(/\b\d+\b/g);
-                    const sum = numbers ? numbers.reduce((acc, num) => acc + parseInt(num), 0) : 0;
+                    // Extract numbers specifically after '=' sign as requested by user
+                    let sum = 0;
+                    (r.content || '').replace(/=\s*(\d+)/g, (m, n) => sum += parseInt(n));
 
                     statusMap[r.username][datePart].sum += sum;
                 });
