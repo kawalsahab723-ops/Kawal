@@ -2697,42 +2697,90 @@
         }
 
 
-        let lastKnownMsgId = parseInt(localStorage.getItem('lastMsgId') || '0');
+        let lastKnownMsgId = localStorage.getItem('lastMsgId') || '0';
+        let notifiedMessages = new Set(JSON.parse(localStorage.getItem('notifiedMessages') || '[]'));
+
+        function showNotificationPopup(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 10000;
+                background: white; border-left: 4px solid var(--primary);
+                padding: 15px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+                transform: translateX(100%); opacity: 0;
+                min-width: 250px; font-family: 'Inter', sans-serif;
+            `;
+            const contentSnippet = msg.content.length > 30 ? msg.content.substring(0, 30) + '...' : msg.content;
+            toast.innerHTML = `
+                <div style="font-weight: 800; font-size: 14px; margin-bottom: 5px; color: #1e293b;">
+                    New Message from ${msg.sender}
+                </div>
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 10px;">
+                    ${msg.receiver === 'global' ? 'In Global Chat' : 'Direct Message'}
+                </div>
+                <div style="font-size: 12px; color: #475569; margin-bottom: 10px; font-style: italic;">
+                    "${contentSnippet}"
+                </div>
+                <button onclick="this.parentElement.style.opacity='0'; setTimeout(()=>this.parentElement.remove(),300);" style="background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Dismiss</button>
+            `;
+            document.body.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.style.transform = 'translateX(0)';
+                toast.style.opacity = '1';
+            });
+
+            setTimeout(() => { 
+                if (toast.parentElement) {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 6000);
+        }
 
         async function checkMessageNotifications() {
             if (!currentUser) return;
             const currentSection = localStorage.getItem('lastView');
             try {
-                // 1. Individual counts for sidebar
-                const resCounts = await fetch(`${API_URL}/messages/unread-counts-per-user?username=${currentUser.username}&lastId=${lastKnownMsgId}`);
-                if (resCounts.ok) {
-                    window.unreadCounts = await resCounts.json();
-                    if (currentSection === 'messages') loadEmployees();
-                }
-
-                // 2. Global count for sidebar tab
-                const res = await fetch(`${API_URL}/messages/unread-count?username=${currentUser.username}&lastId=${lastKnownMsgId}`);
+                // Fetch ALL messages relevant to the user (global + direct)
+                const res = await fetch(`${API_URL}/messages/all-for-user?username=${currentUser.username}`);
                 if (!res.ok) return;
-                const data = await res.json();
+                const msgs = await res.json();
+                
+                let hasNew = false;
+                let unreadCount = 0;
+
+                msgs.forEach(m => {
+                    if (m.sender !== currentUser.username) {
+                        if (!notifiedMessages.has(m._id)) {
+                            notifiedMessages.add(m._id);
+                            hasNew = true;
+                            // Play a sound or show popup
+                            showNotificationPopup(m);
+                        }
+                    }
+                });
+
+                if (hasNew) {
+                    // Keep only the last 100 notified IDs to prevent localStorage from growing infinitely
+                    const arr = Array.from(notifiedMessages).slice(-100);
+                    notifiedMessages = new Set(arr);
+                    localStorage.setItem('notifiedMessages', JSON.stringify(arr));
+                }
 
                 const badge = document.getElementById('msgBadge');
                 const dot = document.getElementById('msgDot');
-
-                if (data.newCount > 0 && currentSection !== 'messages') {
-                    if (badge) {
-                        badge.innerText = data.newCount > 99 ? '99+' : data.newCount;
-                        badge.style.display = 'flex';
-                    }
+                // Basic visual indicators if needed
+                if (hasNew && currentSection !== 'messages') {
                     if (dot) dot.style.display = 'block';
                     if (!document.title.includes('(*)')) {
                         document.title = '(*) ' + document.title;
                     }
-                } else {
+                } else if (currentSection === 'messages') {
                     if (badge) badge.style.display = 'none';
                     if (dot) dot.style.display = 'none';
-                    if (currentSection === 'messages') {
-                        document.title = document.title.replace('(*) ', '');
-                    }
+                    document.title = document.title.replace('(*) ', '');
                 }
             } catch (e) {
                 console.error("Notif Error:", e);

@@ -680,13 +680,42 @@ app.delete("/api/daily-status", async (req, res) => {
 });
 
 app.get("/api/messages", async (req, res) => {
-    const { user1, user2 } = req.query;
-    let filter = { receiver: 'global' };
-    if (user1 && user2) {
-        filter = { $or: [{ sender: user1, receiver: user2 }, { sender: user2, receiver: user1 }] };
+    try {
+        // Explicitly delete messages older than 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await Message.deleteMany({ createdAt: { $lt: twentyFourHoursAgo } });
+
+        const { user1, user2 } = req.query;
+        let filter = { receiver: 'global' };
+        if (user1 && user2) {
+            filter = { $or: [{ sender: user1, receiver: user2 }, { sender: user2, receiver: user1 }] };
+        }
+        const messages = await Message.find(filter).sort({ _id: 1 });
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    const messages = await Message.find(filter).sort({ _id: 1 });
-    res.json(messages);
+});
+
+app.get("/api/messages/all-for-user", async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.json([]);
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        await Message.deleteMany({ createdAt: { $lt: twentyFourHoursAgo } });
+
+        const filter = {
+            $or: [
+                { receiver: 'global' },
+                { receiver: username },
+                { sender: username }
+            ]
+        };
+        const messages = await Message.find(filter).sort({ _id: 1 });
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post("/api/messages", async (req, res) => {
