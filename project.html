@@ -658,7 +658,7 @@
                     // Use Specific PID if available, else use Project ID and Index
                     const finalPid = linkPid || p.id;
                     const finalIdx = linkPid ? 0 : idx;
-                    const trackingUrl = `${window.location.origin}/start?pid=${finalPid}&idx=${finalIdx}&uid=[UID]`;
+                    const trackingUrl = `${window.location.origin}/start?pid=${finalPid}${finalIdx > 0 ? '&idx=' + finalIdx : ''}&uid=[UID]`;
 
                     return `
                         <div class="link-card">
