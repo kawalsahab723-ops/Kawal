@@ -868,8 +868,21 @@
                     fetch(`${API_URL}/projects/${projectId}/click`, { method: 'POST' }).catch(e => {});
                 }
                 const originalText = btn.innerText;
+                const originalBg = btn.style.background;
+                const originalColor = btn.style.color;
+                const originalBorder = btn.style.borderColor;
+
                 btn.innerText = "COPIED!";
-                setTimeout(() => btn.innerText = originalText, 2000);
+                btn.style.background = "var(--success)";
+                btn.style.color = "white";
+                btn.style.borderColor = "var(--success)";
+
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = originalBg;
+                    btn.style.color = originalColor;
+                    btn.style.borderColor = originalBorder;
+                }, 2000);
             });
         }
 

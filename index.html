@@ -3170,13 +3170,20 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             navigator.clipboard.writeText(text).then(() => {
                 if (projectId) DataService.logClick(projectId);
                 const originalText = btn.innerText;
+                const originalBg = btn.style.background;
+                const originalColor = btn.style.color;
+                const originalBorder = btn.style.borderColor;
+
                 btn.innerText = "Copied!";
                 btn.style.background = "var(--success)";
                 btn.style.color = "white";
+                btn.style.borderColor = "var(--success)";
+
                 setTimeout(() => {
                     btn.innerText = originalText;
-                    btn.style.background = "";
-                    btn.style.color = "";
+                    btn.style.background = originalBg;
+                    btn.style.color = originalColor;
+                    btn.style.borderColor = originalBorder;
                 }, 2000);
             });
         }
