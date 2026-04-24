@@ -977,7 +977,7 @@
                 <form id="editProjectForm">
                     <div class="form-group">
                         <label>Project ID</label>
-                        <input type="text" id="eProjId" value="${p.id}" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                        <input type="text" id="eProjId" value="${p.id}" required>
                     </div>
                     <div class="form-group">
                         <label>Project Name</label>
@@ -1026,6 +1026,7 @@
                 })).filter(l => l.url);
 
                 const updateData = {
+                    id: document.getElementById('eProjId').value,
                     name: document.getElementById('eProjName').value,
                     links: newLinks,
                     goal: parseInt(document.getElementById('eProjGoal').value),
@@ -1040,8 +1041,13 @@
                         body: JSON.stringify(updateData)
                     });
                     if (res.ok) {
+                        const responseData = await res.json();
                         closeProjectModal();
-                        loadDetails();
+                        if (responseData.id && responseData.id !== p.id) {
+                            window.location.search = `?id=${encodeURIComponent(responseData.id)}`;
+                        } else {
+                            loadDetails();
+                        }
                     } else {
                         alert('Failed to update project.');
                     }

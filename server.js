@@ -462,8 +462,13 @@ app.put("/api/projects/:id", async (req, res) => {
         updateData.links = JSON.stringify(updateData.links);
     }
     try {
+        const newId = updateData.id;
         await Project.updateOne({ id }, updateData);
-        res.json({ success: true, id });
+        if (newId && newId !== id) {
+            await Interview.updateMany({ projectId: id }, { projectId: newId });
+            await Activity.updateMany({ projectId: id }, { projectId: newId });
+        }
+        res.json({ success: true, id: newId || id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
