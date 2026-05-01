@@ -8,7 +8,7 @@
     <script>
         // Immediate Auth Check to prevent flash
         (function () {
-            const user = localStorage.getItem('opsUser');
+            const user = sessionStorage.getItem('opsUser');
             if (user) {
                 document.documentElement.classList.add('auth-valid');
             }
@@ -1940,7 +1940,7 @@
 
         // Auth Logic
         async function checkAuth() {
-            const savedUser = JSON.parse(localStorage.getItem('opsUser'));
+            const savedUser = JSON.parse(sessionStorage.getItem('opsUser'));
             if (savedUser) {
                 setupUser(savedUser);
             } else {
@@ -1967,8 +1967,8 @@
             fetch(`${API_URL}/messages`).then(res => res.json()).then(msgs => {
                 if (msgs.length > 0) {
                     const maxId = Math.max(...msgs.map(m => m.id));
-                    if (!localStorage.getItem('lastMsgId')) {
-                        localStorage.setItem('lastMsgId', maxId);
+                    if (!sessionStorage.getItem('lastMsgId')) {
+                        sessionStorage.setItem('lastMsgId', maxId);
                         lastKnownMsgId = maxId;
                     }
                 }
@@ -1987,7 +1987,7 @@
 
             // Handle Persistence and URL Parameters
             const params = new URLSearchParams(window.location.search);
-            const view = params.get('view') || localStorage.getItem('lastView');
+            const view = params.get('view') || sessionStorage.getItem('lastView');
 
             if (view) {
                 switchSection(view);
@@ -2279,7 +2279,7 @@
                 });
                 if (res.ok) {
                     const user = await res.json();
-                    localStorage.setItem('opsUser', JSON.stringify(user));
+                    sessionStorage.setItem('opsUser', JSON.stringify(user));
                     setupUser(user);
                     errorEl.style.display = 'none';
                 } else if (res.status === 403) {
@@ -2310,8 +2310,8 @@
         });
 
         function logout() {
-            localStorage.removeItem('opsUser');
-            localStorage.removeItem('lastView');
+            sessionStorage.removeItem('opsUser');
+            sessionStorage.removeItem('lastView');
             window.location.reload();
         }
 
@@ -2405,7 +2405,7 @@
 
         function showAddDailyStatusModal() {
             const modalBody = document.getElementById('modalBody');
-            const savedDraft = localStorage.getItem('statusDraft') || '';
+            const savedDraft = sessionStorage.getItem('statusDraft') || '';
             
             modalBody.innerHTML = `
                 <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 450px; width: 100%;">
@@ -2413,7 +2413,7 @@
                     <form id="dailyStatusForm">
                         <div class="form-group">
                             <label>What did you work on today?</label>
-                            <textarea id="statusContent" required rows="6" placeholder="Describe your tasks, completes, or any blockers..." style="font-size: 13px; line-height: 1.6;" oninput="localStorage.setItem('statusDraft', this.value)">${savedDraft}</textarea>
+                            <textarea id="statusContent" required rows="6" placeholder="Describe your tasks, completes, or any blockers..." style="font-size: 13px; line-height: 1.6;" oninput="sessionStorage.setItem('statusDraft', this.value)">${savedDraft}</textarea>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
                             <button type="button" class="btn btn-outline" onclick="closeProjectModal()" style="margin: 0;">Cancel</button>
@@ -2438,7 +2438,7 @@
                     });
 
                     // Clear draft on success
-                    localStorage.removeItem('statusDraft');
+                    sessionStorage.removeItem('statusDraft');
                     
                     closeProjectModal();
 
@@ -2469,7 +2469,7 @@
             if (sectionEl) sectionEl.classList.add('active');
 
             // Save current section for refresh persistence
-            localStorage.setItem('lastView', section);
+            sessionStorage.setItem('lastView', section);
 
             const currentView = section;
 
@@ -2481,7 +2481,7 @@
                 // Clear notification badge
                 const badge = document.getElementById('notifBadge');
                 if (badge) badge.style.display = 'none';
-                localStorage.setItem('lastActivityCount', document.querySelectorAll('#activityList .activity-row').length || 0);
+                sessionStorage.setItem('lastActivityCount', document.querySelectorAll('#activityList .activity-row').length || 0);
             }
             if (section === 'employees') loadEmployees();
             if (section === 'attendance') {
@@ -2697,8 +2697,8 @@
         }
 
 
-        let lastKnownMsgId = localStorage.getItem('lastMsgId') || '0';
-        let notifiedMessages = new Set(JSON.parse(localStorage.getItem('notifiedMessages') || '[]'));
+        let lastKnownMsgId = sessionStorage.getItem('lastMsgId') || '0';
+        let notifiedMessages = new Set(JSON.parse(sessionStorage.getItem('notifiedMessages') || '[]'));
 
         // Request PC Notification permission
         if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
@@ -2757,7 +2757,7 @@
 
         async function checkMessageNotifications() {
             if (!currentUser) return;
-            const currentSection = localStorage.getItem('lastView');
+            const currentSection = sessionStorage.getItem('lastView');
             try {
                 // Fetch ALL messages relevant to the user (global + direct)
                 const res = await fetch(`${API_URL}/messages/all-for-user?username=${currentUser.username}`);
@@ -2779,10 +2779,10 @@
                 });
 
                 if (hasNew) {
-                    // Keep only the last 100 notified IDs to prevent localStorage from growing infinitely
+                    // Keep only the last 100 notified IDs to prevent sessionStorage from growing infinitely
                     const arr = Array.from(notifiedMessages).slice(-100);
                     notifiedMessages = new Set(arr);
-                    localStorage.setItem('notifiedMessages', JSON.stringify(arr));
+                    sessionStorage.setItem('notifiedMessages', JSON.stringify(arr));
                 }
 
                 const badge = document.getElementById('msgBadge');
@@ -2817,7 +2817,7 @@
                     const lastId = messages[messages.length - 1]._id;
                     if (lastId !== lastKnownMsgId) {
                         lastKnownMsgId = lastId;
-                        localStorage.setItem('lastMsgId', lastKnownMsgId);
+                        sessionStorage.setItem('lastMsgId', lastKnownMsgId);
                     }
                 }
 
@@ -3319,7 +3319,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 const activities = await res.json();
 
                 // Notification Logic
-                const lastActivityCount = localStorage.getItem('lastActivityCount') || 0;
+                const lastActivityCount = sessionStorage.getItem('lastActivityCount') || 0;
                 if (activities.length > lastActivityCount) {
                     const diff = activities.length - lastActivityCount;
                     const badge = document.getElementById('notifBadge');
@@ -3341,9 +3341,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
         async function updateDashboard() {
             // Try to load from cache first for instant response
             if (!window.isDataLoaded) {
-                const cachedProjects = JSON.parse(localStorage.getItem('cache_projects'));
-                const cachedInterviews = JSON.parse(localStorage.getItem('cache_interviews'));
-                const cachedActivities = JSON.parse(localStorage.getItem('cache_activities'));
+                const cachedProjects = JSON.parse(sessionStorage.getItem('cache_projects'));
+                const cachedInterviews = JSON.parse(sessionStorage.getItem('cache_interviews'));
+                const cachedActivities = JSON.parse(sessionStorage.getItem('cache_activities'));
 
                 if (cachedProjects && cachedInterviews) {
                     renderDashboardUI(cachedProjects, cachedInterviews, cachedActivities || []);
@@ -3364,10 +3364,10 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 ]);
 
                 // Save to cache
-                localStorage.setItem('cache_projects', JSON.stringify(projects));
-                localStorage.setItem('cache_interviews', JSON.stringify(allInterviews));
-                localStorage.setItem('cache_activities', JSON.stringify(activities));
-                localStorage.setItem('cache_daily', JSON.stringify(dailyStatuses));
+                sessionStorage.setItem('cache_projects', JSON.stringify(projects));
+                sessionStorage.setItem('cache_interviews', JSON.stringify(allInterviews));
+                sessionStorage.setItem('cache_activities', JSON.stringify(activities));
+                sessionStorage.setItem('cache_daily', JSON.stringify(dailyStatuses));
 
                 renderDashboardUI(projects, allInterviews, activities, dailyStatuses);
 
