@@ -3654,6 +3654,11 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 const p = projects.find(x => x.id === id);
                 const linkSelect = document.getElementById('respLinkIndex');
                 if (p && linkSelect) {
+                    if (p.status === 'hold' || p.status === 'pause') {
+                        linkSelect.innerHTML = `<option value="">⚠️ Project on ${p.status.toUpperCase()}</option>`;
+                        return;
+                    }
+
                     let links = [];
                     try {
                         links = typeof p.links === 'string' ? JSON.parse(p.links || '[]') : (p.links || []);
