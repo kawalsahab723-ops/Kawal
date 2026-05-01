@@ -2353,12 +2353,12 @@
                             <textarea id="mActContent" required rows="4" placeholder="What's the update? (Paste image here)"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Attach Photo (Optional)</label>
+                            <label>Attach File / Photo (Optional)</label>
                             <div id="pastedPreview" style="display: none; margin-bottom: 10px; position: relative;">
                                 <img id="pastedImgTag" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 150px; object-fit: cover;">
                                 <button type="button" onclick="removePastedImage()" style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center;">×</button>
                             </div>
-                            <input type="file" id="mActImage" accept="image/*" style="border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; width: 100%;">
+                            <input type="file" id="mActImage" style="border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; width: 100%;">
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
                             <button type="button" class="btn btn-outline" onclick="closeProjectModal()" style="margin: 0;">Cancel</button>
@@ -3604,11 +3604,18 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                             <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${a.timestamp}</span>
                         </div>
                         <div style="font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500;">${a.content}</div>
-                        ${a.image ? `
+                        ${a.image ? (
+                            a.image.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? `
                             <div style="margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
                                 <img src="${a.image}" style="width: 100%; max-height: 400px; object-fit: contain; cursor: pointer; display: block;" onclick="window.open('${a.image}', '_blank')">
                             </div>
-                        ` : ''}
+                            ` : `
+                            <div style="margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; display: inline-flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 20px;">📎</span>
+                                <a href="${a.image}" target="_blank" style="font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; word-break: break-all;">${a.image.split('/').pop()}</a>
+                            </div>
+                            `
+                        ) : ''}
                     </div>
                     <button onclick="confirmDeleteActivity('${a._id}')" class="admin-only" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 5px; font-size: 16px;" title="Delete Activity">🗑️</button>
                 </div>
