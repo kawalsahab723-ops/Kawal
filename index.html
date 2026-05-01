@@ -1609,6 +1609,11 @@
                                         style="margin: 0; color: var(--error); border-color: #fca5a5; height: 42px; font-size: 11px;"
                                         onclick="clearAll()">Clear All</button>
                                 </div>
+                                <div style="flex: 0.8; min-width: 100px;">
+                                    <button type="button" class="btn btn-outline"
+                                        style="margin: 0; color: #10b981; border-color: #10b981; height: 42px; font-size: 11px;"
+                                        onclick="exportFilteredRespondentsToExcel()">📊 Export</button>
+                                </div>
                             </form>
                         </div>
 
@@ -3538,8 +3543,24 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 if (f.pid && f.pid !== 'All') data = data.filter(i => i.projectId.toLowerCase().includes(f.pid.toLowerCase()));
                 if (f.uid) data = data.filter(i => (i.respId || '').toLowerCase().includes(f.uid.toLowerCase()));
                 if (f.status && f.status !== 'All') data = data.filter(i => i.outcome === f.status);
-                // Date logic...
+                if (f.start) {
+                    const startObj = new Date(f.start);
+                    startObj.setHours(0, 0, 0, 0);
+                    data = data.filter(i => {
+                        const ts = i.timestamp.includes('Z') ? new Date(i.timestamp) : new Date(i.timestamp + ' UTC');
+                        return ts >= startObj;
+                    });
+                }
+                if (f.end) {
+                    const endObj = new Date(f.end);
+                    endObj.setHours(23, 59, 59, 999);
+                    data = data.filter(i => {
+                        const ts = i.timestamp.includes('Z') ? new Date(i.timestamp) : new Date(i.timestamp + ' UTC');
+                        return ts <= endObj;
+                    });
+                }
             }
+            window.currentFilteredRespondents = data;
 
             const respTable = document.getElementById('respondentLogTable');
             if (respTable) {
@@ -3687,6 +3708,55 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     }).join('') || '<option value="0">Default Link</option>';
                 }
             });
+        }
+
+        function exportFilteredRespondentsToExcel() {
+            const data = window.currentFilteredRespondents || [];
+            if (data.length === 0) {
+                alert("No respondents found for the current filter.");
+                return;
+            }
+
+            let csv = "Project ID,Respondent UID,Outcome,LOI (min),Entry Time,Exit Time,Entry IP,Exit IP,Timestamp\n";
+            data.forEach(row => {
+                const clean = (val) => {
+                    if (val === null || val === undefined) return '';
+                    let str = String(val);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return '"' + str.replace(/"/g, '""') + '"';
+                    }
+                    return str;
+                };
+
+                const dateObj = row.timestamp.includes('Z') ? new Date(row.timestamp) : new Date(row.timestamp + ' UTC');
+                const formattedTime = dateObj.toLocaleString();
+
+                csv += [
+                    clean(row.projectId),
+                    clean(row.respId),
+                    clean(row.outcome),
+                    clean(row.loi || 0),
+                    clean(row.entryTime || ''),
+                    clean(row.exitTime || ''),
+                    clean(row.entryIp || ''),
+                    clean(row.exitIp || ''),
+                    clean(formattedTime)
+                ].join(",") + "\n";
+            });
+
+            try {
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Respondents_Export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                console.error("Export Error:", err);
+                alert("Failed to export data.");
+            }
         }
 
         if (document.getElementById('respondentForm')) {
