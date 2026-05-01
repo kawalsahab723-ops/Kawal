@@ -1355,6 +1355,7 @@
         .is-owner .admin-only-flex {
             display: flex;
         }
+
         /* Project Specs Toggle styles */
         .specs-content-wrapper {
             position: relative;
@@ -1372,7 +1373,8 @@
         }
 
         .specs-content-wrapper.collapsed {
-            max-height: 60px; /* Shorter for dashboard cards */
+            max-height: 60px;
+            /* Shorter for dashboard cards */
             overflow: hidden;
         }
 
@@ -1941,6 +1943,21 @@
         // Auth Logic
         async function checkAuth() {
             const savedUser = JSON.parse(sessionStorage.getItem('opsUser'));
+
+            sessionStorage.removeItem('opsUser'); // Keep logout as is or change to session? Actually logout should clear session too.
+
+            const view = params.get('view') || sessionStorage.getItem('lastView');
+
+            sessionStorage.setItem('lastView', section);
+
+            sessionStorage.setItem('opsUser', JSON.stringify(user));
+
+            sessionStorage.setItem('statusDraft', this.value)
+
+            sessionStorage.removeItem('statusDraft');
+
+            const savedDraft = sessionStorage.getItem('statusDraft') || '';
+
             if (savedUser) {
                 setupUser(savedUser);
             } else {
@@ -1957,9 +1974,9 @@
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('appMain').style.display = 'flex';
             document.getElementById('userNameDisplay').innerText = name;
-            const roleLabel = (user.role === 'owner' || user.role === 'admin') ? 'Admin' : 
-                             ((user.role === 'teamleader' || user.role === 'tl') ? 'Team Leader' : 
-                             (user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User'));
+            const roleLabel = (user.role === 'owner' || user.role === 'admin') ? 'Admin' :
+                ((user.role === 'teamleader' || user.role === 'tl') ? 'Team Leader' :
+                    (user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User'));
             document.getElementById('userRoleDisplay').innerText = roleLabel;
             document.getElementById('userInitial').innerText = name[0].toUpperCase();
 
@@ -2355,7 +2372,7 @@
                     if (item.type.indexOf('image') !== -1) {
                         const file = item.getAsFile();
                         window.pastedActivityFile = file;
-                        
+
                         // Show Preview
                         const reader = new FileReader();
                         reader.onload = (event) => {
@@ -2377,7 +2394,7 @@
                 const formData = new FormData();
                 formData.append('projectId', document.getElementById('mActProjectId').value);
                 formData.append('content', document.getElementById('mActContent').value);
-                
+
                 const fileInput = document.getElementById('mActImage');
                 if (fileInput.files[0]) {
                     formData.append('image', fileInput.files[0]);
@@ -2406,7 +2423,7 @@
         function showAddDailyStatusModal() {
             const modalBody = document.getElementById('modalBody');
             const savedDraft = sessionStorage.getItem('statusDraft') || '';
-            
+
             modalBody.innerHTML = `
                 <div class="card" style="margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 450px; width: 100%;">
                     <h1 style="font-size: 20px; margin-bottom: 20px;">Post Daily Update</h1>
@@ -2439,7 +2456,7 @@
 
                     // Clear draft on success
                     sessionStorage.removeItem('statusDraft');
-                    
+
                     closeProjectModal();
 
                     // Update only the status components to avoid full dashboard re-render "stutter"
@@ -2708,7 +2725,7 @@
         function showNotificationPopup(msg) {
             const contentSnippet = msg.content.length > 30 ? msg.content.substring(0, 30) + '...' : msg.content;
             const title = `New Message from ${msg.sender}`;
-            
+
             // OS-Level Desktop Notification
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(title, {
@@ -2740,14 +2757,14 @@
                 <button onclick="this.parentElement.style.opacity='0'; setTimeout(()=>this.parentElement.remove(),300);" style="background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Dismiss</button>
             `;
             document.body.appendChild(toast);
-            
+
             // Trigger animation
             requestAnimationFrame(() => {
                 toast.style.transform = 'translateX(0)';
                 toast.style.opacity = '1';
             });
 
-            setTimeout(() => { 
+            setTimeout(() => {
                 if (toast.parentElement) {
                     toast.style.opacity = '0';
                     setTimeout(() => toast.remove(), 300);
@@ -2763,7 +2780,7 @@
                 const res = await fetch(`${API_URL}/messages/all-for-user?username=${currentUser.username}`);
                 if (!res.ok) return;
                 const msgs = await res.json();
-                
+
                 let hasNew = false;
                 let unreadCount = 0;
 
@@ -3951,18 +3968,18 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 }
 
                 const rawRecords = await statusRes.json();
-                
+
                 // Shift dates back by 1 day for report purposes as requested
                 // (Status on 22nd shows on 21st)
                 const records = rawRecords.map(r => {
                     const d = new Date(r.timestamp);
                     d.setDate(d.getDate() - 1);
-                    return { 
-                        ...r, 
-                        displayDate: d.toISOString().substring(0, 10) 
+                    return {
+                        ...r,
+                        displayDate: d.toISOString().substring(0, 10)
                     };
                 });
-                
+
                 window.monthlyStatusRecords = records; // Store for detail view
 
                 const statusMap = {}; // Map[username][day] = { sum: 0, count: 0 }
@@ -4046,7 +4063,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             const role = currentUser ? currentUser.role : '';
             if (role !== 'owner' && role !== 'admin' && role !== 'teamleader' && role !== 'tl') return;
 
-            const records = (window.monthlyStatusRecords || []).filter(r => 
+            const records = (window.monthlyStatusRecords || []).filter(r =>
                 r.username === username && r.displayDate === dateStr
             );
 
@@ -4069,8 +4086,8 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     </div>
                     <div style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px;">
                         ${records.map(r => {
-                            const time = new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            return `
+                const time = new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
                                 <div style="padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                         <span style="font-size: 11px; font-weight: 800; color: #64748b;">Posted at ${time}</span>
@@ -4078,7 +4095,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                                     <div style="font-size: 14px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${r.content}</div>
                                 </div>
                             `;
-                        }).join('')}
+            }).join('')}
                     </div>
                     <div style="margin-top: 20px; text-align: right;">
                         <button class="btn btn-primary" onclick="closeProjectModal()" style="width: auto; padding: 8px 25px;">Close</button>
