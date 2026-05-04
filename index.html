@@ -1947,28 +1947,33 @@
 
         // Auth Logic
         async function checkAuth() {
-            const savedUser = JSON.parse(sessionStorage.getItem('opsUser'));
-
-            sessionStorage.removeItem('opsUser'); // Keep logout as is or change to session? Actually logout should clear session too.
-
-            const view = params.get('view') || sessionStorage.getItem('lastView');
-
-            sessionStorage.setItem('lastView', section);
-
-            sessionStorage.setItem('opsUser', JSON.stringify(user));
-
-            sessionStorage.setItem('statusDraft', this.value)
-
-            sessionStorage.removeItem('statusDraft');
-
-            const savedDraft = sessionStorage.getItem('statusDraft') || '';
-
-            if (savedUser) {
-                setupUser(savedUser);
-            } else {
-                document.getElementById('loginOverlay').style.display = 'flex';
-                document.getElementById('appMain').style.display = 'none';
+            const savedUserStr = sessionStorage.getItem('opsUser');
+            if (!savedUserStr) {
+                showLogin();
+                return;
             }
+
+            const savedUser = JSON.parse(savedUserStr);
+            
+            // Inactivity Timeout (2 Hours)
+            const lastActive = sessionStorage.getItem('lastActive');
+            const now = Date.now();
+            const timeout = 2 * 60 * 60 * 1000; 
+
+            if (lastActive && (now - lastActive > timeout)) {
+                alert("Session expired due to inactivity.");
+                logout();
+                return;
+            }
+
+            // Update activity timestamp
+            sessionStorage.setItem('lastActive', now);
+            setupUser(savedUser);
+        }
+
+        function showLogin() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appMain').style.display = 'none';
         }
 
         function setupUser(user) {
@@ -3603,7 +3608,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                             <a href="project.html?id=${a.projectId}" style="font-size: 13px; font-weight: 800; color: var(--teal); text-decoration: none; background: #f0fdfa; padding: 2px 8px; border-radius: 4px;">#${a.projectId}</a>
                             <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${a.timestamp}</span>
                         </div>
-                        <div style="font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500;">${a.content}</div>
+                        <div style="font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; white-space: pre-wrap;">${a.content}</div>
                         ${a.image ? (
                             a.image.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? `
                             <div style="margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -4274,7 +4279,15 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
         }
 
         checkAuth();
-
+        
+        // Track activity to prevent timeout while using
+        ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                if (sessionStorage.getItem('opsUser')) {
+                    sessionStorage.setItem('lastActive', Date.now());
+                }
+            }, { passive: true });
+        });
     </script>
 
 </body>

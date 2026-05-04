@@ -5,9 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Details - Survey Ops manager</title>
     <script>
-        if (!localStorage.getItem('opsUser')) {
-            window.location.href = 'index.html';
-        }
+        (function() {
+            const user = sessionStorage.getItem('opsUser');
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Inactivity Timeout (2 Hours)
+            const lastActive = sessionStorage.getItem('lastActive');
+            const now = Date.now();
+            const timeout = 2 * 60 * 60 * 1000;
+
+            if (lastActive && (now - lastActive > timeout)) {
+                sessionStorage.removeItem('opsUser');
+                window.location.href = 'index.html';
+                return;
+            }
+            sessionStorage.setItem('lastActive', now);
+
+            // Track activity
+            ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    if (sessionStorage.getItem('opsUser')) {
+                        sessionStorage.setItem('lastActive', Date.now());
+                    }
+                }, { passive: true });
+            });
+        })();
     </script>
     <style>
         :root {
@@ -572,7 +597,7 @@
 
         // User setup
         (function initProfile() {
-            const userStr = localStorage.getItem('opsUser');
+            const userStr = sessionStorage.getItem('opsUser');
             if (userStr) {
                 const user = JSON.parse(userStr);
                 document.getElementById('userNameDisplay').innerText = (user.username || 'User').toUpperCase();
@@ -582,7 +607,7 @@
         })();
 
         function logout() {
-            localStorage.removeItem('opsUser');
+            sessionStorage.removeItem('opsUser');
             window.location.href = 'index.html';
         }
 
@@ -730,7 +755,7 @@
         async function loadDetails() {
             const params = new URLSearchParams(window.location.search);
             const projectId = params.get('id');
-            const userStr = localStorage.getItem('opsUser');
+            const userStr = sessionStorage.getItem('opsUser');
             if(!userStr) return;
             const user = JSON.parse(userStr);
             const isAdmin = user.role === 'owner' || user.role === 'teamleader';
@@ -848,7 +873,7 @@
                         <div style="color:var(--primary)">🔔</div>
                         <div>
                             <div style="font-size: 11px; font-weight:700; color: #94a3b8;">${a.timestamp}</div>
-                            <div style="font-size: 14px; margin-top: 4px;">${a.content}</div>
+                            <div style="font-size: 14px; margin-top: 4px; white-space: pre-wrap;">${a.content}</div>
                             ${a.image ? `
                                 <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; max-width: 300px;">
                                     <img src="${a.image}" style="width: 100%; display: block; cursor: pointer;" onclick="window.open('${a.image}', '_blank')">
@@ -1074,13 +1099,13 @@
         loadDetails();
 
         // PC Notification Logic for Project Page
-        let notifiedMessages = new Set(JSON.parse(localStorage.getItem('notifiedMessages') || '[]'));
+        let notifiedMessages = new Set(JSON.parse(sessionStorage.getItem('notifiedMessages') || '[]'));
         if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
             Notification.requestPermission();
         }
 
         async function checkMessageNotifications() {
-            const userStr = localStorage.getItem('opsUser');
+            const userStr = sessionStorage.getItem('opsUser');
             if (!userStr) return;
             const currentUser = JSON.parse(userStr);
             try {
@@ -1109,7 +1134,7 @@
                 if (hasNew) {
                     const arr = Array.from(notifiedMessages).slice(-100);
                     notifiedMessages = new Set(arr);
-                    localStorage.setItem('notifiedMessages', JSON.stringify(arr));
+                    sessionStorage.setItem('notifiedMessages', JSON.stringify(arr));
                 }
             } catch (e) {}
         }
