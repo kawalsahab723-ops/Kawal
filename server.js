@@ -422,8 +422,10 @@ app.post("/api/projects", async (req, res) => {
 });
 
 app.get("/api/activities", async (req, res) => {
+    const { projectId } = req.query;
     try {
-        const activities = await Activity.find({}).sort({ _id: -1 }).limit(50);
+        const filter = projectId ? { projectId } : {};
+        const activities = await Activity.find(filter).sort({ _id: -1 }).limit(50);
         res.json(activities);
     } catch (err) {
         res.status(500).json({ error: err.message });
