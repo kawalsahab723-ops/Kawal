@@ -2272,6 +2272,12 @@
 
             document.getElementById('newProjectModalForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalBtnText = btn.innerText;
+                
+                btn.disabled = true;
+                btn.innerText = "Creating...";
+
                 const linkInputs = document.querySelectorAll('.mProjLinkInput');
                 const countryInputs = document.querySelectorAll('.mProjCountryInput');
                 const pidInputs = document.querySelectorAll('.mProjLinkPidInput');
@@ -2283,16 +2289,23 @@
                 })).filter(l => l.url);
 
                 const project = {
-                    id: document.getElementById('mProjId').value,
-                    // name removed
+                    id: document.getElementById('mProjId').value.trim(),
                     links: links,
                     goal: parseInt(document.getElementById('mProjGoal').value),
                     cpi: parseFloat(document.getElementById('mProjCPI').value || 0),
                     details: document.getElementById('mProjDetails').value
                 };
-                await DataService.saveProject(project);
-                closeProjectModal();
-                updateDashboard();
+
+                const result = await DataService.saveProject(project);
+                
+                if (result.success) {
+                    closeProjectModal();
+                    updateDashboard();
+                } else {
+                    alert("❌ Error: " + result.message);
+                    btn.disabled = false;
+                    btn.innerText = originalBtnText;
+                }
             });
         }
 
@@ -3234,9 +3247,12 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(project)
                     });
-                    if (res.ok) return true;
-                } catch (e) { }
-                return false;
+                    const data = await res.json();
+                    if (res.ok) return { success: true, data };
+                    return { success: false, message: data.message || 'Failed to save project' };
+                } catch (e) {
+                    return { success: false, message: 'Network error or server unavailable' };
+                }
             },
             async updateProjectStatus(id, status) {
                 try {

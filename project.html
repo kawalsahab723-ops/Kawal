@@ -1049,6 +1049,11 @@
 
             document.getElementById('editProjectForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalBtnText = btn.innerText;
+                btn.disabled = true;
+                btn.innerText = "Saving...";
+
                 const linkInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjLinkInput');
                 const countryInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjCountryInput');
                 const pidInputs = document.querySelectorAll('#modalLinksContainerEdit .eProjLinkPidInput');
@@ -1060,8 +1065,7 @@
                 })).filter(l => l.url);
 
                 const updateData = {
-                    id: document.getElementById('eProjId').value,
-                    // name removed
+                    id: document.getElementById('eProjId').value.trim(),
                     links: newLinks,
                     goal: parseInt(document.getElementById('eProjGoal').value),
                     cpi: parseFloat(document.getElementById('eProjCPI').value || 0),
@@ -1074,8 +1078,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updateData)
                     });
+                    const responseData = await res.json();
+                    
                     if (res.ok) {
-                        const responseData = await res.json();
                         closeProjectModal();
                         if (responseData.id && responseData.id !== p.id) {
                             window.location.search = `?id=${encodeURIComponent(responseData.id)}`;
@@ -1083,11 +1088,15 @@
                             loadDetails();
                         }
                     } else {
-                        alert('Failed to update project.');
+                        alert("❌ Error: " + (responseData.message || responseData.error || 'Failed to update project.'));
+                        btn.disabled = false;
+                        btn.innerText = originalBtnText;
                     }
                 } catch (error) {
                     console.error(error);
                     alert('Error updating project.');
+                    btn.disabled = false;
+                    btn.innerText = originalBtnText;
                 }
             });
         }

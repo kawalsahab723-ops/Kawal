@@ -413,6 +413,10 @@ app.get("/api/projects", async (req, res) => {
 app.post("/api/projects", async (req, res) => {
     const { id, links, goal, details, cpi } = req.body;
     try {
+        const existing = await Project.findOne({ id });
+        if (existing) {
+            return res.status(400).json({ message: `Project with ID ${id} already exists!` });
+        }
         const linksStr = typeof links === 'string' ? links : JSON.stringify(links || []);
         const project = await Project.create({ id, name: '', links: linksStr, goal: goal || 0, details: details || '', cpi: cpi || 0, status: 'live' });
         res.json(project);
@@ -460,11 +464,20 @@ app.delete("/api/activities/:id", async (req, res) => {
 app.put("/api/projects/:id", async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
+    const newId = updateData.id;
+
     if (updateData.links && typeof updateData.links !== 'string') {
         updateData.links = JSON.stringify(updateData.links);
     }
+    
     try {
-        const newId = updateData.id;
+        if (newId && newId !== id) {
+            const existing = await Project.findOne({ id: newId });
+            if (existing) {
+                return res.status(400).json({ message: `Cannot change to ID ${newId} because it already exists!` });
+            }
+        }
+
         await Project.updateOne({ id }, updateData);
         if (newId && newId !== id) {
             await Interview.updateMany({ projectId: id }, { projectId: newId });
@@ -472,7 +485,7 @@ app.put("/api/projects/:id", async (req, res) => {
         }
         res.json({ success: true, id: newId || id });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: "Error updating project: " + err.message });
     }
 });
 
