@@ -1668,11 +1668,11 @@
                                 On Hold</div>
                             <div id="stat-hold-p" style="font-size: 24px; font-weight: 800; color: #f59e0b;">0</div>
                         </div>
-                        <div class="card stat-card" onclick="filterProjectsByStatus('closed')"
+                        <div class="card stat-card" onclick="filterProjectsByZeroClicks()"
                             style="cursor:pointer; border-left: 4px solid #ef4444;">
                             <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">
-                                Closed Projects</div>
-                            <div id="stat-closed-p" style="font-size: 24px; font-weight: 800; color: #ef4444;">0</div>
+                                Zero Click Projects</div>
+                            <div id="stat-zero-p" style="font-size: 24px; font-weight: 800; color: #ef4444;">0</div>
                         </div>
                     </div>
 
@@ -1941,6 +1941,12 @@
 
         function filterProjectsByStatus(status) {
             window.projectStatusFilter = status;
+            window.projectZeroClickFilter = false;
+            updateDashboard();
+        }
+        function filterProjectsByZeroClicks() {
+            window.projectStatusFilter = 'all';
+            window.projectZeroClickFilter = true;
             updateDashboard();
         }
         const API_URL = '/api';
@@ -2227,10 +2233,7 @@
                         <label>Project ID (Unique Code)</label>
                         <input type="text" id="mProjId" required placeholder="e.g. PRJ_101" oninput="checkMultiPid(this)">
                     </div>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <input type="text" id="mProjName" required placeholder="e.g. Brand Equity Study 2024">
-                    </div>
+                    <!-- Project Name Removed -->
                     
                     <div class="form-group">
                         <label>Survey Links & Countries</label>
@@ -2281,7 +2284,7 @@
 
                 const project = {
                     id: document.getElementById('mProjId').value,
-                    name: document.getElementById('mProjName').value,
+                    // name removed
                     links: links,
                     goal: parseInt(document.getElementById('mProjGoal').value),
                     cpi: parseFloat(document.getElementById('mProjCPI').value || 0),
@@ -3433,7 +3436,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             if (dashProjList) {
                 dashProjList.innerHTML = sortedProjects.slice(0, 5).map(p => `
                     <div onclick="window.location.href='project.html?id=${encodeURIComponent(p.id)}'" style="padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                        <span style="font-weight:700; font-size:13px; color: var(--teal);">${p.id.startsWith('#') ? p.id : '#' + p.id} ${p.name}</span>
+                        <span style="font-weight:700; font-size:13px; color: var(--teal);">${p.id.startsWith('#') ? p.id : '#' + p.id}</span>
                         <span class="status-pill status-${p.status || 'live'}" style="font-size:10px;">${(p.status || 'live').toUpperCase()}</span>
                     </div>
                 `).join('') || '<p style="text-align:center; color:#94a3b8; padding:20px;">No projects yet.</p>';
@@ -3466,8 +3469,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                     if (!matchesName && !matchesId && !matchesSubId) return;
                 }
 
-                // Filtering Logic (Status)
-                if (window.projectStatusFilter && window.projectStatusFilter !== 'all') {
+                // Filtering Logic
+                if (window.projectZeroClickFilter && (p.clicks || 0) > 0) return;
+                if (!window.projectZeroClickFilter && window.projectStatusFilter && window.projectStatusFilter !== 'all') {
                     if (window.projectStatusFilter === 'hold') {
                         if (status !== 'hold' && status !== 'pause') return;
                     } else if (status !== window.projectStatusFilter) {
@@ -3487,12 +3491,12 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 gridHtml += `
                     <div class="p-card" onclick="window.location.href='project.html?id=${p.id}'">
                         <div class="p-card-header">
-                            <span class="p-card-id">${p.name}</span>
+                            <span class="p-card-id">${p.id.startsWith('#') ? p.id : '#' + p.id}</span>
                             <div style="display: flex; gap: 5px; align-items: center;">
                                 <span class="status-pill ${statusClass}">${status.toUpperCase()}</span>
                             </div>
                         </div>
-                        <div class="p-card-name">${p.id.startsWith('#') ? p.id : '#' + p.id}</div>
+                        <!-- Project ID already shown in header -->
                         <div class="p-card-quota" style="font-size:11px; margin-bottom:10px;">Target Goal: <strong>${p.goal || 0}</strong></div>
                         ${currentUser.role === 'owner' ? `<div style="font-size:11px; color:var(--teal); font-weight:800; margin-bottom:10px;">CPI: $${p.cpi || 0}</div>` : ''}
                         
@@ -3511,10 +3515,8 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         <div class="p-card-actions admin-only-flex" onclick="event.stopPropagation()">
                             <button class="action-btn" style="background:#059669" onclick="changePStatus('${p.id}', 'live')">Live</button>
                             <button class="action-btn" style="background:#f59e0b" onclick="changePStatus('${p.id}', 'hold')">Hold</button>
-                            <button class="action-btn admin-only" style="background:#ea580c" onclick="changePStatus('${p.id}', 'pause')">Pause</button>
-                            <button class="action-btn admin-only" style="background:#dc2626; border-radius: 6px; padding: 6px; flex: 1;" onclick="changePStatus('${p.id}', 'closed')">Close</button>
-                            <button class="action-btn admin-only" style="background:var(--teal); color: #fff; margin-top: 5px; width: 100%;" onclick="window.location.href='project.html?id=${encodeURIComponent(p.id)}'">Edit Project</button>
-                            <button class="action-btn admin-only" style="background:#000; color: #fff; margin-top: 5px; width: 100%;" onclick="confirmDeleteProject('${p.id}')">Delete Project</button>
+                            <button class="action-btn" style="background:var(--teal); flex: 1;" onclick="window.location.href='project.html?id=${encodeURIComponent(p.id)}'">Edit Project</button>
+                            <button class="action-btn admin-only" style="background:#334155; border-radius: 6px; padding: 6px; width: 40px;" onclick="confirmDeleteProject('${p.id}')">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -3529,7 +3531,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             document.getElementById('stat-total-p').innerText = cTotal;
             document.getElementById('stat-live-p').innerText = cLive;
             document.getElementById('stat-hold-p').innerText = cHold;
-            document.getElementById('stat-closed-p').innerText = cClosed;
+            
+            let cZero = projects.filter(p => (p.clicks || 0) === 0).length;
+            document.getElementById('stat-zero-p').innerText = cZero;
 
             // Global Dashboard Stats
             const validProjectIds = new Set(projects.map(p => p.id));

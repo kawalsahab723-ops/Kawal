@@ -786,7 +786,6 @@
                     <div class="project-header">
                         <div style="display:flex; justify-content:space-between; align-items: flex-start;">
                             <div>
-                                <span class="project-id" style="border-radius: 6px; padding: 4px 10px;">${p.name}</span>
                                 <h1 class="project-title">${p.id.startsWith('#') ? p.id : '#' + p.id}</h1>
                             </div>
                             ${isAdminOrOwner ? `<button class="btn btn-outline" onclick="showEditProjectModal()" style="font-size: 12px;">✏️ Edit Project</button>` : ''}
@@ -936,7 +935,7 @@
             const s = interviews.filter(i => i.outcome === 'Security Terminate').length;
             const ir = (c + t) > 0 ? ((c / (c + t)) * 100).toFixed(1) : 0;
 
-            const text = `${p.id} ${p.name}\nComp: ${c}\nTerm: ${t}\nQF: ${q}\nSTer: ${s}\nIR: ${ir}%\n\nInstructions:\n${p.details || 'None'}`;
+            const text = `${p.id}\nComp: ${c}\nTerm: ${t}\nQF: ${q}\nSTer: ${s}\nIR: ${ir}%\n\nInstructions:\n${p.details || 'None'}`;
             navigator.clipboard.writeText(text).then(() => {
                 alert("Project details copied vertically!");
             }).catch(err => console.error(err));
@@ -1017,10 +1016,7 @@
                         <label>Project ID</label>
                         <input type="text" id="eProjId" value="${p.id}" required>
                     </div>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <input type="text" id="eProjName" required value="${p.name}">
-                    </div>
+                    <!-- Project Name Removed -->
                     
                     <div class="form-group">
                         <label>Survey Links & Countries</label>
@@ -1065,7 +1061,7 @@
 
                 const updateData = {
                     id: document.getElementById('eProjId').value,
-                    name: document.getElementById('eProjName').value,
+                    // name removed
                     links: newLinks,
                     goal: parseInt(document.getElementById('eProjGoal').value),
                     cpi: parseFloat(document.getElementById('eProjCPI').value || 0),

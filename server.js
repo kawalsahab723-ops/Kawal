@@ -172,7 +172,7 @@ const projectSchema = new mongoose.Schema({
     links: String, // Stored as JSON string to match previous behavior
     goal: { type: Number, default: 0 },
     details: { type: String, default: '' },
-    status: { type: String, default: 'active' },
+    status: { type: String, default: 'live' },
     clicks: { type: Number, default: 0 },
     completes: { type: Number, default: 0 },
     terminates: { type: Number, default: 0 },
@@ -411,10 +411,10 @@ app.get("/api/projects", async (req, res) => {
 });
 
 app.post("/api/projects", async (req, res) => {
-    const { id, name, links, goal, details, cpi } = req.body;
+    const { id, links, goal, details, cpi } = req.body;
     try {
         const linksStr = typeof links === 'string' ? links : JSON.stringify(links || []);
-        const project = await Project.create({ id, name, links: linksStr, goal: goal || 0, details: details || '', cpi: cpi || 0 });
+        const project = await Project.create({ id, name: '', links: linksStr, goal: goal || 0, details: details || '', cpi: cpi || 0, status: 'live' });
         res.json(project);
     } catch (err) {
         res.status(400).json({ message: "Error saving project: " + err.message });
