@@ -2310,19 +2310,22 @@
             if (confirm(`🚨 WARNING: Are you sure you want to PERMANENTLY delete ${selected.length} selected projects and all their response data? This cannot be undone.`)) {
                 const btn = document.getElementById('bulkDeleteBtn');
                 const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerText = "Deleting...";
+                try {
+                    btn.disabled = true;
+                    btn.innerText = "Deleting...";
 
-                const result = await DataService.bulkDeleteProjects(selected);
-                if (result.success) {
-                    alert(`${selected.length} projects deleted successfully.`);
-                    toggleBulkSelectMode(); // Exit selection mode
-                    updateDashboard();
-                } else {
-                    alert("❌ Error: " + result.message);
+                    const result = await DataService.bulkDeleteProjects(selected);
+                    if (result.success) {
+                        alert(`${selected.length} projects deleted successfully.`);
+                        toggleBulkSelectMode(); // Exit selection mode
+                        updateDashboard();
+                    } else {
+                        alert("❌ Error: " + result.message);
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                 }
-                btn.disabled = false;
-                btn.innerHTML = originalText;
             }
         }
 
@@ -3376,19 +3379,25 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 return false;
             },
             async bulkDeleteProjects(ids) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
                 try {
                     console.log("📤 Sending bulk delete request for:", ids);
                     const res = await fetch(`${API_URL}/projects/bulk-delete`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ids })
+                        body: JSON.stringify({ ids }),
+                        signal: controller.signal
                     });
+                    clearTimeout(timeoutId);
                     const data = await res.json();
                     if (res.ok) return { success: true };
                     return { success: false, message: data.error || data.message || 'Server error' };
                 } catch (e) { 
+                    clearTimeout(timeoutId);
                     console.error("❌ Bulk delete error:", e);
-                    return { success: false, message: 'Network error or server unavailable' };
+                    return { success: false, message: e.name === 'AbortError' ? 'Request timed out (server is slow)' : 'Network error or server unavailable' };
                 }
             },
             async getInterviews(projectId) {

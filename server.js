@@ -184,7 +184,7 @@ const projectSchema = new mongoose.Schema({
 const Project = mongoose.model('Project', projectSchema);
 
 const interviewSchema = new mongoose.Schema({
-    projectId: String,
+    projectId: { type: String, index: true },
     linkIndex: { type: Number, default: 0 },
     respId: String,
     outcome: String,
