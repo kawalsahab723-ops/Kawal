@@ -1063,6 +1063,7 @@
             text-transform: uppercase;
             background: linear-gradient(135deg, #0f172a, var(--teal));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -1409,6 +1410,26 @@
             background: #e2e8f0;
             color: var(--teal-dark);
         }
+
+        /* Bulk Delete Styling */
+        .project-select-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--teal);
+            margin: 0;
+        }
+
+        .bulk-actions-active .p-card-checkbox-wrapper {
+            display: block !important;
+        }
+
+        .p-card-checkbox-wrapper {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+        }
     </style>
 </head>
 
@@ -1682,8 +1703,16 @@
                             <h1 class="dashboard-title" style="margin-bottom: 5px;">Project Management</h1>
                             <p style="color: #6b7280; font-size: 13px;">Create and monitor survey projects</p>
                         </div>
-                        <button class="btn btn-primary admin-only" style="width: auto;"
-                            onclick="showNewProjectModal()">+ Add New Project</button>
+                        <div class="admin-only-flex" style="gap: 10px; display: none;">
+                            <div id="selectAllContainer" style="display: none; align-items: center; gap: 8px; background: #fff; padding: 5px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="project-select-checkbox">
+                                <label for="selectAllCheckbox" style="font-size: 12px; margin: 0; cursor: pointer; font-weight: 700;">Select All</label>
+                            </div>
+                            <button id="bulkDeleteBtn" class="btn" style="width: auto; background: var(--error); color: white; display: none;" onclick="deleteSelectedProjects()">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button>
+                            <button id="toggleSelectBtn" class="btn btn-outline" style="width: auto; margin: 0;" onclick="toggleBulkSelectMode()">Selection Mode</button>
+                            <button class="btn btn-primary" style="width: auto; margin: 0;"
+                                onclick="showNewProjectModal()">+ Add New Project</button>
+                        </div>
                     </div>
 
                     <div id="projectGridContainer" class="project-grid">
@@ -1960,11 +1989,11 @@
             }
 
             const savedUser = JSON.parse(savedUserStr);
-            
+
             // Inactivity Timeout (2 Hours)
             const lastActive = sessionStorage.getItem('lastActive');
             const now = Date.now();
-            const timeout = 2 * 60 * 60 * 1000; 
+            const timeout = 2 * 60 * 60 * 1000;
 
             if (lastActive && (now - lastActive > timeout)) {
                 alert("Session expired due to inactivity.");
@@ -2223,6 +2252,80 @@
             }
         }
 
+        function toggleBulkSelectMode() {
+            const grid = document.getElementById('projectGridContainer');
+            const btn = document.getElementById('toggleSelectBtn');
+            const bulkBtn = document.getElementById('bulkDeleteBtn');
+            const selectAll = document.getElementById('selectAllContainer');
+            const checkboxes = document.querySelectorAll('.p-card-checkbox-wrapper');
+
+            const isActive = grid.classList.toggle('bulk-actions-active');
+            
+            checkboxes.forEach(cb => {
+                cb.style.display = isActive ? 'block' : 'none';
+            });
+
+            btn.innerText = isActive ? 'Exit Selection' : 'Selection Mode';
+            btn.classList.toggle('btn-primary', isActive);
+            btn.classList.toggle('btn-outline', !isActive);
+            
+            bulkBtn.style.display = isActive ? 'block' : 'none';
+            selectAll.style.display = isActive ? 'flex' : 'none';
+            
+            if (!isActive) {
+                // Clear selections when exiting
+                document.querySelectorAll('.project-select-checkbox').forEach(c => c.checked = false);
+                document.getElementById('selectAllCheckbox').checked = false;
+                updateSelectedCount();
+            }
+        }
+
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.project-select-checkbox');
+            checkboxes.forEach(cb => {
+                if (cb !== master) cb.checked = master.checked;
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = Array.from(document.querySelectorAll('.project-select-checkbox')).filter(cb => cb.id !== 'selectAllCheckbox');
+            const checked = checkboxes.filter(cb => cb.checked);
+            document.getElementById('selectedCount').innerText = checked.length;
+            
+            // Sync Select All checkbox
+            const master = document.getElementById('selectAllCheckbox');
+            if (master) {
+                master.checked = checked.length === checkboxes.length && checkboxes.length > 0;
+                master.indeterminate = checked.length > 0 && checked.length < checkboxes.length;
+            }
+        }
+
+        async function deleteSelectedProjects() {
+            const selected = Array.from(document.querySelectorAll('.project-select-checkbox:checked'))
+                .filter(cb => cb.id !== 'selectAllCheckbox')
+                .map(cb => cb.dataset.id);
+            if (selected.length === 0) return alert("Please select at least one project.");
+
+            if (confirm(`🚨 WARNING: Are you sure you want to PERMANENTLY delete ${selected.length} selected projects and all their response data? This cannot be undone.`)) {
+                const btn = document.getElementById('bulkDeleteBtn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerText = "Deleting...";
+
+                const success = await DataService.bulkDeleteProjects(selected);
+                if (success) {
+                    alert(`${selected.length} projects deleted successfully.`);
+                    toggleBulkSelectMode(); // Exit selection mode
+                    updateDashboard();
+                } else {
+                    alert("Error deleting projects.");
+                }
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         async function showNewProjectModal() {
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = `
@@ -2274,7 +2377,7 @@
                 e.preventDefault();
                 const btn = e.target.querySelector('button[type="submit"]');
                 const originalBtnText = btn.innerText;
-                
+
                 btn.disabled = true;
                 btn.innerText = "Creating...";
 
@@ -2297,7 +2400,7 @@
                 };
 
                 const result = await DataService.saveProject(project);
-                
+
                 if (result.success) {
                     closeProjectModal();
                     updateDashboard();
@@ -3272,6 +3375,17 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 } catch (e) { }
                 return false;
             },
+            async bulkDeleteProjects(ids) {
+                try {
+                    const res = await fetch(`${API_URL}/projects/bulk-delete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids })
+                    });
+                    if (res.ok) return true;
+                } catch (e) { }
+                return false;
+            },
             async getInterviews(projectId) {
                 try {
                     const url = projectId ? `${API_URL}/interviews?projectId=${encodeURIComponent(projectId)}` : `${API_URL}/interviews`;
@@ -3506,6 +3620,9 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                 const statusClass = `status-${status}`;
                 gridHtml += `
                     <div class="p-card" onclick="window.location.href='project.html?id=${p.id}'">
+                        <div class="p-card-checkbox-wrapper" style="display: none;" onclick="event.stopPropagation()">
+                            <input type="checkbox" class="project-select-checkbox" data-id="${p.id}" onchange="updateSelectedCount()">
+                        </div>
                         <div class="p-card-header">
                             <span class="p-card-id">${p.id.startsWith('#') ? p.id : '#' + p.id}</span>
                             <div style="display: flex; gap: 5px; align-items: center;">
@@ -3547,7 +3664,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             document.getElementById('stat-total-p').innerText = cTotal;
             document.getElementById('stat-live-p').innerText = cLive;
             document.getElementById('stat-hold-p').innerText = cHold;
-            
+
             let cZero = projects.filter(p => (p.clicks || 0) === 0).length;
             document.getElementById('stat-zero-p').innerText = cZero;
 
@@ -3630,7 +3747,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                         </div>
                         <div style="font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; white-space: pre-wrap;">${a.content}</div>
                         ${a.image ? (
-                            a.image.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? `
+                    a.image.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? `
                             <div style="margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
                                 <img src="${a.image}" style="width: 100%; max-height: 400px; object-fit: contain; cursor: pointer; display: block;" onclick="window.open('${a.image}', '_blank')">
                             </div>
@@ -3640,7 +3757,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
                                 <a href="${a.image}" target="_blank" style="font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; word-break: break-all;">${a.image.split('/').pop()}</a>
                             </div>
                             `
-                        ) : ''}
+                ) : ''}
                     </div>
                     <button onclick="confirmDeleteActivity('${a._id}')" class="admin-only" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 5px; font-size: 16px;" title="Delete Activity">🗑️</button>
                 </div>
@@ -3682,7 +3799,12 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
         }
 
         // Set Polling for Real-Time synchronization
-        setInterval(updateDashboard, 5000);
+        setInterval(() => {
+            const grid = document.getElementById('projectGridContainer');
+            if (grid && !grid.classList.contains('bulk-actions-active')) {
+                updateDashboard();
+            }
+        }, 5000);
         setInterval(checkMessageNotifications, 5000);
 
         async function toggleProjectStatus(id, status) {
@@ -4299,7 +4421,7 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
         }
 
         checkAuth();
-        
+
         // Track activity to prevent timeout while using
         ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
             window.addEventListener(evt, () => {
