@@ -2313,13 +2313,13 @@
                 btn.disabled = true;
                 btn.innerText = "Deleting...";
 
-                const success = await DataService.bulkDeleteProjects(selected);
-                if (success) {
+                const result = await DataService.bulkDeleteProjects(selected);
+                if (result.success) {
                     alert(`${selected.length} projects deleted successfully.`);
                     toggleBulkSelectMode(); // Exit selection mode
                     updateDashboard();
                 } else {
-                    alert("Error deleting projects.");
+                    alert("❌ Error: " + result.message);
                 }
                 btn.disabled = false;
                 btn.innerHTML = originalText;
@@ -3377,14 +3377,19 @@ ${newPassword ? `New Password: ${newPassword}` : 'Password remains the same.'}`;
             },
             async bulkDeleteProjects(ids) {
                 try {
+                    console.log("📤 Sending bulk delete request for:", ids);
                     const res = await fetch(`${API_URL}/projects/bulk-delete`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ids })
                     });
-                    if (res.ok) return true;
-                } catch (e) { }
-                return false;
+                    const data = await res.json();
+                    if (res.ok) return { success: true };
+                    return { success: false, message: data.error || data.message || 'Server error' };
+                } catch (e) { 
+                    console.error("❌ Bulk delete error:", e);
+                    return { success: false, message: 'Network error or server unavailable' };
+                }
             },
             async getInterviews(projectId) {
                 try {

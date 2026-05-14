@@ -500,6 +500,19 @@ app.delete("/api/projects/:id", async (req, res) => {
     }
 });
 
+app.post("/api/projects/bulk-delete", async (req, res) => {
+    console.log("🗑️ Bulk delete request received:", req.body);
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: "Invalid IDs" });
+    try {
+        await Project.deleteMany({ id: { $in: ids } });
+        await Interview.deleteMany({ projectId: { $in: ids } });
+        res.json({ success: true, message: `${ids.length} projects deleted permanently` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 /* ======================
    📈 INTERVIEW ROUTES
    ====================== */
